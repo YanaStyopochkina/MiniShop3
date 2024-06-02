@@ -1,6 +1,7 @@
 <?php
 
 use MiniShop3\Controllers\Options\Types\msOptionType;
+use MiniShop3\Controllers\Config\Settings\Grid;
 
 if (!class_exists('msManagerController')) {
     require_once dirname(__FILE__, 2) . '/manager.class.php';
@@ -29,6 +30,11 @@ class MiniShop3MgrSettingsManagerController extends msManagerController
      */
     public function loadCustomCssJs()
     {
+        $gridController = new Grid($this->modx);
+        $gridSettings = $gridController->getSettings();
+        $this->modx->log(1, print_r($gridSettings, 1));
+
+
         $this->addCss($this->ms3->config['cssUrl'] . 'mgr/bootstrap.buttons.css');
         $this->addCss($this->ms3->config['cssUrl'] . 'mgr/main.css');
         $this->addJavascript($this->ms3->config['jsUrl'] . 'mgr/minishop3.js');
@@ -71,9 +77,11 @@ class MiniShop3MgrSettingsManagerController extends msManagerController
 
         $config = $this->ms3->config;
         $config['default_thumb'] = $this->ms3->config['defaultThumb'];
+
         $this->addHtml('<script>
             ms3.config = ' . json_encode($config) . ';
-
+            ms3.config.settings =  ' . json_encode($gridSettings) . ';
+           
             MODx.perm.msorder_list = ' . ($this->modx->hasPermission('msorder_list') ? 1 : 0) . ';
 
             Ext.onReady(function() {

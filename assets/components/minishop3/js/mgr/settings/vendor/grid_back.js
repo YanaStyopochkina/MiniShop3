@@ -4,7 +4,7 @@ ms3.grid.Vendor = function (config) {
         config.id = 'ms3-grid-vendor';
     }
     config.disableContextMenuAction = true;
-
+    
     Ext.applyIf(config, {
         baseParams: {
             action: 'MiniShop3\\Processors\\Settings\\Vendor\\GetList',
@@ -17,11 +17,37 @@ ms3.grid.Vendor = function (config) {
 };
 Ext.extend(ms3.grid.Vendor, ms3.grid.Default, {
     getFields: function () {
-        return ms3.config.settings.vendor.grid.fields;
+        return [
+            'id', 'name', 'resource_id', 'country', 'email', 'logo', 'pagetitle',
+            'address', 'phone', 'description', 'actions'
+        ];
     },
 
     getColumns: function () {
-        return ms3.config.settings.vendor.grid.columns;
+        return [
+            {header: _('ms3_id'), dataIndex: 'id', width: 30, sortable: true},
+            {header: _('ms3_logo'), dataIndex: 'logo', id: 'image', width: 50, renderer: ms3.utils.renderImage},
+            {header: _('ms3_name'), dataIndex: 'name', width: 100, sortable: true},
+            {
+                header: _('ms3_resource'),
+                dataIndex: 'resource_id',
+                width: 100,
+                sortable: true,
+                hidden: true,
+                renderer: this._renderResource
+            },
+            {header: _('ms3_country'), dataIndex: 'country', width: 75, sortable: true},
+            {header: _('ms3_email'), dataIndex: 'email', width: 100, sortable: true},
+            {header: _('ms3_address'), dataIndex: 'address', width: 100, sortable: true, hidden: true},
+            {header: _('ms3_phone'), dataIndex: 'phone', width: 75, sortable: true},
+            {
+                header: _('ms3_actions'),
+                dataIndex: 'actions',
+                id: 'actions',
+                width: 50,
+                renderer: ms3.utils.renderActions
+            }
+        ];
     },
 
     getTopBar: function () {
@@ -135,6 +161,6 @@ Ext.extend(ms3.grid.Vendor, ms3.grid.Default, {
         return value
             ? String.format('({0}) {1}', value, row.data['pagetitle'])
             : '';
-    },
+    }
 });
 Ext.reg('ms3-grid-vendor', ms3.grid.Vendor);

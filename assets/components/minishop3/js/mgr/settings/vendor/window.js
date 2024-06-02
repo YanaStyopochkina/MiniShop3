@@ -5,8 +5,7 @@ setTimeout(() => {
     MODx.Ajax.request({
         url: ms3.config.connector_url,
         params: {
-            action: 'MiniShop3\\Processors\\Config\\Read',
-            config: 'settings/vendor/window',
+            action: 'MiniShop3\\Processors\\Config\\Settings\\Vendor\\Window',
         },
         listeners: {
             success: {

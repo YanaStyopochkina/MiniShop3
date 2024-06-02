@@ -1,10 +1,10 @@
 <?php
 
-namespace MiniShop3\Processors\Config;
+namespace MiniShop3\Processors\Config\Settings\Vendor;
 
 use MODX\Revolution\Processors\Processor;
 
-class Read extends Processor
+class Window extends Processor
 {
     /**
      * @return array|string

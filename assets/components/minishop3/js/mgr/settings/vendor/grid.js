@@ -17,11 +17,11 @@ ms3.grid.Vendor = function (config) {
 };
 Ext.extend(ms3.grid.Vendor, ms3.grid.Default, {
     getFields: function () {
-        return ms3.config.settings.vendor.grid.fields;
+        return ms3.config.layout.vendor.grid.fields;
     },
 
     getColumns: function () {
-        return ms3.config.settings.vendor.grid.columns;
+        return ms3.config.layout.vendor.grid.columns;
     },
 
     getTopBar: function () {

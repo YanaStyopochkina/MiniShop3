@@ -56,7 +56,7 @@ a.link, a.ms2-link { color: #005580; }
 }
 .tbar-checkbox { text-align: left; }
 .tbar-checkbox label { padding: 2px 0 0 22px !important; line-height: normal; }
-/* Grid actions and menu */
+/* Layout actions and menu */
 ul.ms3-row-actions {
     margin: 0;
     padding: 0;

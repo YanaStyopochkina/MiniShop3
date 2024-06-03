@@ -1,38 +1,49 @@
 <?php
 
-namespace MiniShop3\Processors\Config\Settings\Vendor;
+namespace MiniShop3\Controllers\Config\Settings\Vendor;
 
-use MODX\Revolution\Processors\Processor;
+use MODX\Revolution\modX;
 
-class Window extends Processor
+class Window
 {
-    /**
-     * @return array|string
-     *
-     * @throws
-     */
-    public function process()
+    private $modx;
+
+    public function __construct(modX $modx)
+    {
+        $this->modx = $modx;
+    }
+
+    public function getCreate()
+    {
+        $fileJSON = $this->getConfigFromJSON();
+        return $this->getCreateLayout($fileJSON);
+    }
+
+    public function getUpdate()
+    {
+        $fileJSON = $this->getConfigFromJSON();
+        return $this->getUpdateLayout($fileJSON);
+    }
+
+    protected function getConfigFromJSON()
     {
         $file = MODX_CORE_PATH . 'components/minishop3/config/mgr/settings/vendor/window.json';
         if (!file_exists($file)) {
             $this->modx->log(1, 'file not found: ' . $file);
-            return $this->success();
+            return [];
         }
 
         $fileData = file_get_contents($file);
         if (empty($fileData)) {
-            return $this->success();
+            return [];
         }
         $fileJSON = json_decode($fileData, true);
         if (!is_array($fileJSON)) {
             $this->modx->log(1, 'not array');
-            return $this->success();
+            return [];
         }
 
-        $createLayout = $this->getCreateLayout($fileJSON);
-        $updateLayout = $this->getUpdateLayout($fileJSON);
-
-        return $this->success('', compact('createLayout', 'updateLayout'));
+        return $fileJSON;
     }
 
     private function getCreateLayout($fileJSON)

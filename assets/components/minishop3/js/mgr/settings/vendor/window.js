@@ -1,28 +1,3 @@
-let SettingsVendorWindowCreateFields = []
-let SettingsVendorWindowUpdateFields = []
-
-setTimeout(() => {
-    MODx.Ajax.request({
-        url: ms3.config.connector_url,
-        params: {
-            action: 'MiniShop3\\Processors\\Config\\Settings\\Vendor\\Window',
-        },
-        listeners: {
-            success: {
-                fn: function (response) {
-                    SettingsVendorWindowCreateFields = Object.assign(SettingsVendorWindowCreateFields, response.object.createLayout)
-                    SettingsVendorWindowUpdateFields = Object.assign(SettingsVendorWindowUpdateFields, response.object.updateLayout)
-                }
-            },
-            failure: {
-                fn: function (response) {
-                    MODx.msg.alert(_('error'), response.message)
-                }
-            },
-        }
-    })
-}, 400)
-
 ms3.window.CreateVendor = function (config) {
     config = config || {}
 
@@ -37,7 +12,7 @@ ms3.window.CreateVendor = function (config) {
 }
 Ext.extend(ms3.window.CreateVendor, ms3.window.Default, {
     getFields: function (config) {
-        return SettingsVendorWindowCreateFields
+        return ms3.config.layout.vendor.window.create;
     },
 })
 Ext.reg('ms3-window-vendor-create', ms3.window.CreateVendor)
@@ -55,7 +30,7 @@ ms3.window.UpdateVendor = function (config) {
 }
 Ext.extend(ms3.window.UpdateVendor, ms3.window.CreateVendor, {
     getFields: function (config) {
-        return SettingsVendorWindowUpdateFields
+        return ms3.config.layout.vendor.window.update;
     },
 })
 Ext.reg('ms3-window-vendor-update', ms3.window.UpdateVendor)

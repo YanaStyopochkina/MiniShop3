@@ -4,8 +4,9 @@ namespace MiniShop3\Controllers\Config\Settings;
 
 use MODX\Revolution\modX;
 use MiniShop3\Controllers\Config\Settings\Vendor\Grid as VendorGrid;
+use MiniShop3\Controllers\Config\Settings\Vendor\Window as VendorWindow;
 
-class Grid
+class Layout
 {
     private $modx;
 
@@ -19,13 +20,17 @@ class Grid
      *
      * @throws
      */
-    public function getSettings(): array
+    public function getLayout(): array
     {
         $vendorGrid = new VendorGrid($this->modx);
+        $vendorWindow = new VendorWindow($this->modx);
 
         $output = [];
         $output['vendor']['grid']['columns'] = $vendorGrid->getColumns();
         $output['vendor']['grid']['fields'] = $vendorGrid->getFields();
+
+        $output['vendor']['window']['create'] = $vendorWindow->getCreate();
+        $output['vendor']['window']['update'] = $vendorWindow->getUpdate();
 
         return $output;
     }

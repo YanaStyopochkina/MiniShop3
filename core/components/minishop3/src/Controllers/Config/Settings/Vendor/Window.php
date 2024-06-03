@@ -13,19 +13,19 @@ class Window
         $this->modx = $modx;
     }
 
-    public function getCreate()
+    public function getCreate(): array
     {
         $fileJSON = $this->getConfigFromJSON();
         return $this->getCreateLayout($fileJSON);
     }
 
-    public function getUpdate()
+    public function getUpdate(): array
     {
         $fileJSON = $this->getConfigFromJSON();
         return $this->getUpdateLayout($fileJSON);
     }
 
-    protected function getConfigFromJSON()
+    protected function getConfigFromJSON(): array
     {
         $file = MODX_CORE_PATH . 'components/minishop3/config/mgr/settings/vendor/window.json';
         if (!file_exists($file)) {
@@ -46,7 +46,7 @@ class Window
         return $fileJSON;
     }
 
-    private function getCreateLayout($fileJSON)
+    private function getCreateLayout($fileJSON): array
     {
         $idPrefix = 'ms3-window-vendor-create';
         $layout = [];
@@ -96,7 +96,7 @@ class Window
         return $layout;
     }
 
-    private function getUpdateLayout($fileJSON)
+    private function getUpdateLayout($fileJSON): array
     {
         $idPrefix = 'ms3-window-vendor-update';
         $layout = [];

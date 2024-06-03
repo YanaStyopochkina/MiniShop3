@@ -35,7 +35,7 @@ class Grid
         return $output;
     }
 
-    protected function getConfigFromJSON()
+    protected function getConfigFromJSON(): array
     {
         $file = MODX_CORE_PATH . 'components/minishop3/config/mgr/settings/delivery/grid.json';
         if (!file_exists($file)) {

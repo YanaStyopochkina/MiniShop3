@@ -7,6 +7,7 @@ use MiniShop3\Controllers\Config\Settings\Vendor\Grid as VendorGrid;
 use MiniShop3\Controllers\Config\Settings\Vendor\Window as VendorWindow;
 
 use MiniShop3\Controllers\Config\Settings\Delivery\Grid as DeliveryGrid;
+use MiniShop3\Controllers\Config\Settings\Delivery\Window as DeliveryWindow;
 
 class Layout
 {
@@ -28,6 +29,7 @@ class Layout
         $vendorWindow = new VendorWindow($this->modx);
 
         $deliveryGrid = new DeliveryGrid($this->modx);
+        $deliveryWindow = new DeliveryWindow($this->modx);
 
         $output = [];
         $output['vendor']['grid']['columns'] = $vendorGrid->getColumns();
@@ -38,6 +40,9 @@ class Layout
 
         $output['delivery']['grid']['columns'] = $deliveryGrid->getColumns();
         $output['delivery']['grid']['fields'] = $deliveryGrid->getFields();
+
+        $output['delivery']['window']['create'] = $deliveryWindow->getCreate();
+        $output['delivery']['window']['update'] = $deliveryWindow->getUpdate();
 
         return $output;
     }

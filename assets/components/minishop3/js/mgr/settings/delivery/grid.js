@@ -23,31 +23,11 @@ ms3.grid.Delivery = function (config) {
 Ext.extend(ms3.grid.Delivery, ms3.grid.Default, {
 
     getFields: function () {
-        return [
-            'id', 'name', 'price', 'weight_price', 'distance_price', 'position', 'payments',
-            'logo', 'active', 'class', 'description', 'validation_rules', 'actions', 'free_delivery_amount'
-        ];
+        return ms3.config.layout.delivery.grid.fields;
     },
 
     getColumns: function () {
-        return [
-            {header: _('ms3_id'), dataIndex: 'id', width: 20},
-            {header: _('ms3_logo'), dataIndex: 'logo', id: 'image', width: 30, renderer: ms3.utils.renderImage},
-            {header: _('ms3_name'), dataIndex: 'name', width: 75},
-            {header: _('ms3_add_cost'), dataIndex: 'price', width: 50},
-            {header: _('ms3_weight_price'), dataIndex: 'weight_price', width: 50, hidden: true},
-            {header: _('ms3_distance_price'), dataIndex: 'distance_price', width: 50, hidden: true},
-            {header: _('ms3_payments'), dataIndex: 'payments', width: 50},
-            {header: _('ms3_class'), dataIndex: 'class', width: 50},
-            {header: _('ms3_rank'), dataIndex: 'position', width: 35, hidden: true},
-            {
-                header: _('ms3_actions'),
-                dataIndex: 'actions',
-                id: 'actions',
-                width: 50,
-                renderer: ms3.utils.renderActions
-        }
-        ];
+        return ms3.config.layout.delivery.grid.columns;
     },
 
     getTopBar: function () {

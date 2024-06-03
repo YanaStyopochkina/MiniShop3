@@ -32,8 +32,6 @@ class MiniShop3MgrSettingsManagerController extends msManagerController
     {
         $layoutController = new Layout($this->modx);
         $layout = $layoutController->getLayout();
-        $this->modx->log(1, print_r($layout, 1));
-
 
         $this->addCss($this->ms3->config['cssUrl'] . 'mgr/bootstrap.buttons.css');
         $this->addCss($this->ms3->config['cssUrl'] . 'mgr/main.css');

@@ -182,7 +182,7 @@ Ext.extend(ms3.panel.Gallery, MODx.Panel, {
     },
 
     fireAlert: function () {
-        MODx.msg.alert(_('ms2_errors'), this.errors);
+        MODx.msg.alert(_('ms3_err_gallery_upload'), this.errors);
     },
 
     /*

@@ -167,6 +167,7 @@ $_lang['ms3_err_gallery_ns'] = 'Передан пустой файл';
 $_lang['ms3_err_gallery_ext'] = 'Неверное расширение файла';
 $_lang['ms3_err_gallery_exists'] = 'Такое изображение уже есть в галерее товара.';
 $_lang['ms3_err_gallery_thumb'] = 'Не получилось сгенерировать превьюшки. Смотрите системный лог.';
+$_lang['ms3_err_gallery_upload'] = 'Не могу загрузить файл.';
 $_lang['ms3_err_wrong_image'] = 'Файл не является корректным изображением.';
 $_lang['ms3_err_gallery_is_not_msproduct'] = '[msGallery] Ресурс с id = [[+id]] не является товаром.';
 

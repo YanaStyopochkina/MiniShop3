@@ -2,6 +2,7 @@
 
 use MiniShop3\Model\msProduct;
 use MiniShop3\Model\msProductData;
+use MiniShop3\Controllers\Config\Product\Layout;
 
 if (!class_exists('msResourceUpdateController')) {
     require_once dirname(__FILE__, 2) . '/resource_update.class.php';
@@ -36,6 +37,9 @@ class msProductUpdateManagerController extends msResourceUpdateController
      */
     public function loadCustomCssJs()
     {
+        $layoutController = new Layout($this->modx);
+        $layout = $layoutController->getLayout();
+
         $mgrUrl = $this->getOption('manager_url', null, MODX_MANAGER_URL);
         $assetsUrl = $this->ms3->config['assetsUrl'];
 
@@ -149,6 +153,7 @@ class msProductUpdateManagerController extends msResourceUpdateController
         MODx.onDocFormRender = "' . $this->onDocFormRender . '";
         MODx.ctx = "' . $this->ctx . '";
         ms3.config = ' . json_encode($config) . ';
+        ms3.config.layout = ' . json_encode($layout) . ';
         Ext.onReady(function() {
             MODx.load(' . json_encode($ready) . ');
         });

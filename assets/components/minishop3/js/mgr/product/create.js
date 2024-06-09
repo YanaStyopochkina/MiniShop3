@@ -68,7 +68,6 @@ Ext.extend(ms3.panel.CreateProduct, ms3.panel.Product, {
             const item = originals[i];
             fields.push(item);
         }
-        console.log(fields)
         return fields;
     },
 

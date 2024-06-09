@@ -72,7 +72,6 @@ Ext.extend(ms3.panel.Product, MODx.panel.Resource, {
                 tabs.push(this.getProductCategories(config))
 
                 const optionsTab = this.getProductOptions(config)
-                console.log(optionsTab)
                 if (optionsTab) {
                   tabs.push(optionsTab)
                 }
@@ -96,29 +95,12 @@ Ext.extend(ms3.panel.Product, MODx.panel.Resource, {
   },
 
   getProductFields: function (config) {
-    const enabled = ms3.config.data_fields
-    const available = ms3.config.extra_fields
-
-    const product_fields = this.getAllProductFields(config)
-    const col1 = []
-    const col2 = []
-    let tmp
-    for (let i = 0; i < available.length; i++) {
-      const field = available[i]
-      this.active_fields = []
-      if ((enabled.length > 0 && enabled.indexOf(field) === -1) || this.active_fields.indexOf(field) !== -1) {
-        continue
-      }
-      if (tmp = product_fields[field]) {
-        this.active_fields.push(field)
-        tmp = this.getExtField(config, field, tmp)
-        if (i % 2) {
-          col2.push(tmp)
-        } else {
-          col1.push(tmp)
-        }
-      }
-    }
+      ms3.config.layout.product.data.left.forEach(field => {
+          field.value = config.record[field.name]
+      })
+      ms3.config.layout.product.data.right.forEach(field => {
+          field.value = config.record[field.name]
+      })
 
     return {
       title: _('ms3_tab_product_data'),
@@ -131,13 +113,13 @@ Ext.extend(ms3.panel.Product, MODx.panel.Resource, {
           layout: 'form',
           id: 'ms3-product-data-left',
           labelAlign: 'top',
-          items: col1,
+          items: ms3.config.layout.product.data.left,
         }, {
           columnWidth: .5,
           layout: 'form',
           id: 'ms3-product-data-right',
           labelAlign: 'top',
-          items: col2,
+          items: ms3.config.layout.product.data.right,
         }],
       }],
       listeners: {},
@@ -146,8 +128,6 @@ Ext.extend(ms3.panel.Product, MODx.panel.Resource, {
 
   getProductOptions: function (config) {
     const options = this.getOptionFields(config)
-
-    console.log(options)
 
     if (!options.length) {
       return false

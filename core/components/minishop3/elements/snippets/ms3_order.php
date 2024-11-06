@@ -70,7 +70,7 @@ $includeDeliveryKeys = array_map('trim', explode(',', $includeDeliveryFields));
 $includeDeliveryKeys = array_unique(array_merge($includeDeliveryKeys, ['id']));
 
 if ($includeDeliveryKeys[0] === '*') {
-    $select['msDelivery'] = $modx->getSelectColumns(msDelivery::class, '`msDelivery`', 'delivery_', ['id'], true);
+    $select['msDelivery'] = $modx->getSelectColumns(msDelivery::class, '`msDelivery`', 'delivery_');
 } else {
     $select['msDelivery'] = $modx->getSelectColumns(
         msDelivery::class,
@@ -123,6 +123,9 @@ $default = [
     'return' => 'data',
     'nestedChunkPrefix' => 'ms3_',
 ];
+if ($scriptProperties['return'] === 'tpl') {
+    unset($scriptProperties['return']);
+}
 // Merge all properties and run!
 $pdoFetch->setConfig(array_merge($default, $scriptProperties), false);
 $rows = $pdoFetch->run();

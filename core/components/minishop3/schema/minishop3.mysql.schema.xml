@@ -233,6 +233,7 @@
 
     <object class="msOrder" table="ms3_orders" extends="xPDO\Om\xPDOSimpleObject">
         <field key="user_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false"/>
+        <field key="customer_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false"/>
         <field key="token" dbtype="varchar" precision="32" phptype="string" null="false" default=""/>
         <field key="createdon" dbtype="datetime" phptype="datetime" null="true" />
         <field key="updatedon" dbtype="datetime" phptype="datetime" null="true" />
@@ -254,6 +255,9 @@
         <index alias="user_id" name="user_id" primary="false" unique="false" type="BTREE">
             <column key="user_id" length="" collation="A" null="false"/>
         </index>
+        <index alias="customer_id" name="customer_id" primary="false" unique="false" type="BTREE">
+            <column key="customer_id" length="" collation="A" null="false"/>
+        </index>
         <index alias="token" name="token" primary="false" unique="false" type="BTREE">
             <column key="token" length="" collation="A" null="false"/>
         </index>
@@ -263,6 +267,8 @@
 
         <aggregate alias="User" class="MODX\Revolution\modUser" local="user_id" foreign="id" cardinality="one" owner="foreign"/>
         <aggregate alias="UserProfile" class="MODX\Revolution\modUserProfile" local="user_id" foreign="internalKey" owner="foreign"
+                   cardinality="one"/>
+        <aggregate alias="msCustomer" class="MiniShop3\Model\msCustomer" local="customer_id" foreign="id" owner="foreign"
                    cardinality="one"/>
         <aggregate alias="CustomerProfile" class="MiniShop3\Model\msCustomerProfile" local="user_id" foreign="id" owner="foreign"
                    cardinality="one"/>
@@ -330,10 +336,10 @@
 
     <object class="msOrderAddress" table="ms3_order_addresses" extends="xPDO\Om\xPDOSimpleObject">
         <field key="order_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false"/>
-        <field key="user_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="false"/>
         <field key="createdon" dbtype="datetime" phptype="datetime" null="true" />
         <field key="updatedon" dbtype="datetime" phptype="datetime" null="true" />
-        <field key="receiver" dbtype="varchar" precision="255" phptype="string" null="true"/>
+        <field key="first_name" dbtype="varchar" precision="255" phptype="string" null="true"/>
+        <field key="last_name" dbtype="varchar" precision="255" phptype="string" null="true"/>
         <field key="phone" dbtype="varchar" precision="20" phptype="string" null="true"/>
         <field key="email" dbtype="varchar" precision="191" phptype="string" null="true"/>
         <field key="country" dbtype="varchar" precision="100" phptype="string" null="true"/>
@@ -350,19 +356,11 @@
         <field key="text_address" dbtype="text" phptype="string" null="true"/>
         <field key="properties" dbtype="text" phptype="json" null="true"/>
 
-        <index alias="user_id" name="user_id" primary="false" unique="false" type="BTREE">
-            <column key="user_id" length="" collation="A" null="false"/>
-        </index>
         <index alias="order_id" name="order_id" primary="false" unique="false" type="BTREE">
             <column key="order_id" length="" collation="A" null="false"/>
         </index>
 
         <aggregate alias="Order" class="MiniShop3\Model\msOrder" local="order_id" foreign="id" owner="foreign" cardinality="one"/>
-        <aggregate alias="User" class="MODX\Revolution\modUser" local="user_id" foreign="id" owner="foreign" cardinality="one"/>
-        <aggregate alias="UserProfile" class="MODX\Revolution\modUserProfile" local="user_id" foreign="internalKey" owner="foreign"
-                   cardinality="one"/>
-        <aggregate alias="CustomerProfile" class="MiniShop3\Model\msCustomerProfile" local="user_id" foreign="internalKey"
-                   owner="foreign" cardinality="one"/>
     </object>
 
 
@@ -442,6 +440,38 @@
         </index>
 
         <aggregate alias="User" class="MODX\Revolution\modUser" local="user_id" foreign="id" owner="foreign" cardinality="one"/>
+    </object>
+
+    <object class="msCustomerAddress" table="ms3_customer_addresses" extends="xPDO\Om\xPDOSimpleObject">
+        <field key="customer_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="true" default="0"/>
+        <field key="phone" dbtype="varchar" precision="20" phptype="string" null="true"/>
+        <field key="email" dbtype="varchar" precision="191" phptype="string" null="true"/>
+        <field key="country" dbtype="varchar" precision="100" phptype="string" null="true"/>
+        <field key="index" dbtype="varchar" precision="50" phptype="string" null="true"/>
+        <field key="region" dbtype="varchar" precision="100" phptype="string" null="true"/>
+        <field key="city" dbtype="varchar" precision="100" phptype="string" null="true"/>
+        <field key="metro" dbtype="varchar" precision="255" phptype="string" null="true"/>
+        <field key="street" dbtype="varchar" precision="255" phptype="string" null="true"/>
+        <field key="building" dbtype="varchar" precision="10" phptype="string" null="true"/>
+        <field key="entrance" dbtype="varchar" precision="10" phptype="string" null="true"/>
+        <field key="floor" dbtype="varchar" precision="10" phptype="string" null="true"/>
+        <field key="room" dbtype="varchar" precision="10" phptype="string" null="true"/>
+        <field key="comment" dbtype="text" phptype="string" null="true"/>
+
+        <index alias="first_name" name="first_name" primary="false" unique="false" type="BTREE">
+            <column key="first_name" length="" collation="A" null="false"/>
+        </index>
+        <index alias="last_name" name="last_name" primary="false" unique="true" type="BTREE">
+            <column key="last_name" length="" collation="A" null="false"/>
+        </index>
+        <index alias="email" name="email" primary="false" unique="false" type="BTREE">
+            <column key="email" length="" collation="A" null="false"/>
+        </index>
+        <index alias="phone" name="phone" primary="false" unique="false" type="BTREE">
+            <column key="phone" length="" collation="A" null="false"/>
+        </index>
+
+        <aggregate alias="Customer" class="MiniShop3\Model\msCustomer" local="customer_id" foreign="id" owner="foreign" cardinality="one"/>
     </object>
 
     <object class="msCustomerProfile" table="ms3_customer_profiles" extends="xPDO\Om\xPDOSimpleObject"  >

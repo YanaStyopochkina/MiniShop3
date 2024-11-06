@@ -16,6 +16,7 @@ class msOrder extends \MiniShop3\Model\msOrder
         'fields' =>
             [
                 'user_id' => 0,
+                'customer_id' => 0,
                 'token' => '',
                 'createdon' => null,
                 'updatedon' => null,
@@ -34,6 +35,15 @@ class msOrder extends \MiniShop3\Model\msOrder
         'fieldMeta' =>
             [
                 'user_id' =>
+                    [
+                        'dbtype' => 'int',
+                        'precision' => '10',
+                        'attributes' => 'unsigned',
+                        'phptype' => 'integer',
+                        'null' => true,
+                        'default' => 0,
+                    ],
+                'customer_id' =>
                     [
                         'dbtype' => 'int',
                         'precision' => '10',
@@ -167,6 +177,22 @@ class msOrder extends \MiniShop3\Model\msOrder
                                     ],
                             ],
                     ],
+                'customer_id' =>
+                    [
+                        'alias' => 'customer_id',
+                        'primary' => false,
+                        'unique' => false,
+                        'type' => 'BTREE',
+                        'columns' =>
+                            [
+                                'customer_id' =>
+                                    [
+                                        'length' => '',
+                                        'collation' => 'A',
+                                        'null' => false,
+                                    ],
+                            ],
+                    ],
                 'token' =>
                     [
                         'alias' => 'token',
@@ -244,6 +270,14 @@ class msOrder extends \MiniShop3\Model\msOrder
                         'foreign' => 'internalKey',
                         'owner' => 'foreign',
                         'cardinality' => 'one',
+                    ],
+                'Customer' =>
+                    [
+                        'class' => 'MiniShop3\\Model\\msCustomer',
+                        'local' => 'customer_id',
+                        'foreign' => 'id',
+                        'cardinality' => 'one',
+                        'owner' => 'foreign',
                     ],
                 'CustomerProfile' =>
                     [

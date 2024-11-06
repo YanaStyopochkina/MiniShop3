@@ -2,12 +2,12 @@
 
 namespace MiniShop3\Model\mysql;
 
-class msOrderAddress extends \MiniShop3\Model\msOrderAddress
+class msCustomerAddress extends \MiniShop3\Model\msCustomerAddress
 {
     public static $metaMap = [
         'package' => 'MiniShop3\\Model',
         'version' => '3.0',
-        'table' => 'ms3_order_addresses',
+        'table' => 'ms3_customer_addresses',
         'extends' => 'xPDO\\Om\\xPDOSimpleObject',
         'tableMeta' =>
             [
@@ -15,13 +15,7 @@ class msOrderAddress extends \MiniShop3\Model\msOrderAddress
             ],
         'fields' =>
             [
-                'order_id' => null,
-                'createdon' => null,
-                'updatedon' => null,
-                'first_name' => null,
-                'last_name' => null,
-                'phone' => null,
-                'email' => null,
+                'customer_id' => 0,
                 'country' => null,
                 'index' => null,
                 'region' => null,
@@ -33,58 +27,17 @@ class msOrderAddress extends \MiniShop3\Model\msOrderAddress
                 'floor' => null,
                 'room' => null,
                 'comment' => null,
-                'text_address' => null,
-                'properties' => null,
             ],
         'fieldMeta' =>
             [
-                'order_id' =>
+                'customer_id' =>
                     [
                         'dbtype' => 'int',
                         'precision' => '10',
-                        'attributes' => 'unsigned',
                         'phptype' => 'integer',
+                        'attributes' => 'unsigned',
                         'null' => false,
-                    ],
-                'createdon' =>
-                    [
-                        'dbtype' => 'datetime',
-                        'phptype' => 'datetime',
-                        'null' => true,
-                    ],
-                'updatedon' =>
-                    [
-                        'dbtype' => 'datetime',
-                        'phptype' => 'datetime',
-                        'null' => true,
-                    ],
-                'first_name' =>
-                    [
-                        'dbtype' => 'varchar',
-                        'precision' => '255',
-                        'phptype' => 'string',
-                        'null' => true,
-                    ],
-                'last_name' =>
-                    [
-                        'dbtype' => 'varchar',
-                        'precision' => '255',
-                        'phptype' => 'string',
-                        'null' => true,
-                    ],
-                'phone' =>
-                    [
-                        'dbtype' => 'varchar',
-                        'precision' => '20',
-                        'phptype' => 'string',
-                        'null' => true,
-                    ],
-                'email' =>
-                    [
-                        'dbtype' => 'varchar',
-                        'precision' => '191',
-                        'phptype' => 'string',
-                        'null' => true,
+                        'default' => 0,
                     ],
                 'country' =>
                     [
@@ -162,30 +115,18 @@ class msOrderAddress extends \MiniShop3\Model\msOrderAddress
                         'phptype' => 'string',
                         'null' => true,
                     ],
-                'text_address' =>
-                    [
-                        'dbtype' => 'text',
-                        'phptype' => 'string',
-                        'null' => true,
-                    ],
-                'properties' =>
-                    [
-                        'dbtype' => 'text',
-                        'phptype' => 'json',
-                        'null' => true,
-                    ],
             ],
         'indexes' =>
             [
-                'order_id' =>
+                'customer_id' =>
                     [
-                        'alias' => 'order_id',
+                        'alias' => 'customer_id',
                         'primary' => false,
                         'unique' => false,
                         'type' => 'BTREE',
                         'columns' =>
                             [
-                                'order_id' =>
+                                'customer_id' =>
                                     [
                                         'length' => '',
                                         'collation' => 'A',
@@ -196,10 +137,10 @@ class msOrderAddress extends \MiniShop3\Model\msOrderAddress
             ],
         'aggregates' =>
             [
-                'Order' =>
+                'Customer' =>
                     [
-                        'class' => 'MiniShop3\\Model\\msOrder',
-                        'local' => 'order_id',
+                        'class' => 'MiniShop3\\Model\\msCustomer',
+                        'local' => 'customer_id',
                         'foreign' => 'id',
                         'owner' => 'foreign',
                         'cardinality' => 'one',

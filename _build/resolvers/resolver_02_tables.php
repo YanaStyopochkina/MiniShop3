@@ -49,14 +49,14 @@ if ($transport->xpdo) {
                     }
                     foreach ($modx->getFields($class) as $field => $v) {
                         if (in_array($field, $tableFields)) {
-                            unset($tableFields[$field]);
                             $manager->alterField($class, $field);
                         } else {
                             $manager->addField($class, $field);
                         }
+                        unset($tableFields[$field]);
                     }
                     foreach ($tableFields as $field) {
-                        //$manager->removeField($class, $field);
+                        $manager->removeField($class, $field);
                     }
                     // 2. Operate with indexes
                     $indexes = [];

@@ -13,6 +13,7 @@ use MODX\Revolution\modUserProfile;
 use MODX\Revolution\modUserSetting;
 use MODX\Revolution\modX;
 
+use MongoDB\BSON\ObjectId;
 use Rakit\Validation\Validator;
 
 class Customer
@@ -107,7 +108,7 @@ class Customer
         $_SESSION['ms3']['validation']['messages'] = $this->validationMessages;
     }
 
-    public function get()
+    public function getFields(): array
     {
         if (empty($this->token)) {
             return $this->error('ms3_err_token');
@@ -116,9 +117,23 @@ class Customer
             'token' => $this->token,
         ]);
         if (!$msCustomer) {
-            return [];
+            return $this->success('', $this->modx->getFields(msCustomer::class));
         }
-        return $msCustomer->toArray();
+        return $this->success('', $msCustomer->toArray());
+    }
+
+    public function getObject(): object|null
+    {
+        if (empty($this->token)) {
+            return null;
+        }
+        $msCustomer = $this->modx->getObject(msCustomer::class, [
+            'token' => $this->token,
+        ]);
+        if (!$msCustomer) {
+            return null;
+        }
+        return $msCustomer;
     }
 
     public function set($data = [])
@@ -130,7 +145,7 @@ class Customer
             $this->add($key, $value);
         }
 
-        return $this->get();
+        return $this->getFields();
     }
 
     public function add($key, $value)
@@ -251,100 +266,164 @@ class Customer
      *
      * @return integer $id
      */
+//    public function getId()
+//    {
+//        $customer = null;
+//
+//        $response = $this->ms3->utils->invokeEvent('msOnBeforeGetOrderCustomer', [
+//            'order' => $this->ms3->order,
+//            'customer' => $customer,
+//        ]);
+//        if (!$response['success']) {
+//            return $response['message'];
+//        }
+//
+//        if (!$customer) {
+//            $data = $this->ms3->order->get();
+//            $email = $data['email'] ?? '';
+//            $receiver = $data['receiver'] ?? '';
+//            $phone = $data['phone'] ?? '';
+//            if (empty($receiver)) {
+//                $receiver = $email
+//                    ? substr($email, 0, strpos($email, '@'))
+//                    : ($phone
+//                        ? preg_replace('#\D#', '', $phone)
+//                        : uniqid('user_', false));
+//            }
+//            if (empty($email)) {
+//                $email = $receiver . '@' . $this->modx->getOption('http_host');
+//            }
+//
+//            if ($this->modx->user->isAuthenticated()) {
+//                $profile = $this->modx->user->Profile;
+//                if (!$profile->get('email')) {
+//                    $profile->set('email', $email);
+//                    $profile->save();
+//                }
+//                $customer = $this->modx->user;
+//            } else {
+//                $c = $this->modx->newQuery(modUser::class);
+//                $c->leftJoin(modUserProfile::class, 'Profile');
+//                $filter = ['username' => $email, 'OR:Profile.email:=' => $email];
+//                if (!empty($phone)) {
+//                    $filter['OR:Profile.mobilephone:='] = $phone;
+//                }
+//                $c->where($filter);
+//                $c->select('modUser.id');
+//                if (!$customer = $this->modx->getObject(modUser::class, $c)) {
+//                    $customer = $this->modx->newObject(modUser::class, ['username' => $email, 'password' => md5(rand())]
+//                    );
+//                    $profile = $this->modx->newObject(modUserProfile::class, [
+//                        'email' => $email,
+//                        'fullname' => $receiver,
+//                        'mobilephone' => $phone
+//                    ]);
+//                    $customer->addOne($profile);
+//                    /** @var modUserSetting $setting */
+//                    $setting = $this->modx->newObject(modUserSetting::class);
+//                    $setting->fromArray([
+//                        'key' => 'cultureKey',
+//                        'area' => 'language',
+//                        'value' => $this->modx->getOption('cultureKey', null, 'en', true),
+//                    ], '', true);
+//                    $customer->addMany($setting);
+//                    if (!$customer->save()) {
+//                        $customer = null;
+//                    } elseif ($groups = $this->modx->getOption('ms3_order_user_groups', null, false)) {
+//                        $groupRoles = array_map('trim', explode(',', $groups));
+//                        foreach ($groupRoles as $groupRole) {
+//                            $groupRole = explode(':', $groupRole);
+//                            if (count($groupRole) > 1 && !empty($groupRole[1])) {
+//                                if (is_numeric($groupRole[1])) {
+//                                    $roleId = (int)$groupRole[1];
+//                                } else {
+//                                    $roleId = $groupRole[1];
+//                                }
+//                            } else {
+//                                $roleId = null;
+//                            }
+//                            $customer->joinGroup($groupRole[0], $roleId);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        $response = $this->ms3->utils->invokeEvent('msOnGetOrderCustomer', [
+//            'order' => $this->ms3->order,
+//            'customer' => $customer,
+//        ]);
+//        if (!$response['success']) {
+//            return $response['message'];
+//        }
+//
+//        return $customer instanceof modUser
+//            ? $customer->get('id')
+//            : 0;
+//    }
+
+    /**
+     * Returns id for current customer. If customer is not exists, registers him and returns id.
+     *
+     * @return integer $id
+     */
     public function getId()
     {
-        $customer = null;
+        $msCustomer = null;
 
+        // TODO  проработать вопрос с возвращением объекта или массива customer из плагина. Пока не работает
         $response = $this->ms3->utils->invokeEvent('msOnBeforeGetOrderCustomer', [
-            'order' => $this->ms3->order,
-            'customer' => $customer,
+            'controller' => $this->ms3->order,
+            'msCustomer' => $msCustomer,
         ]);
         if (!$response['success']) {
             return $response['message'];
         }
 
-        if (!$customer) {
-            $data = $this->ms3->order->get();
-            $email = $data['email'] ?? '';
-            $receiver = $data['receiver'] ?? '';
-            $phone = $data['phone'] ?? '';
-            if (empty($receiver)) {
-                $receiver = $email
-                    ? substr($email, 0, strpos($email, '@'))
-                    : ($phone
-                        ? preg_replace('#\D#', '', $phone)
-                        : uniqid('user_', false));
-            }
-            if (empty($email)) {
-                $email = $receiver . '@' . $this->modx->getOption('http_host');
-            }
+//        if ($customer) {
+//            return $customer->get('id');
+//        }
+//
+        $msCustomer = $this->getObject();
 
-            if ($this->modx->user->isAuthenticated()) {
-                $profile = $this->modx->user->Profile;
-                if (!$profile->get('email')) {
-                    $profile->set('email', $email);
-                    $profile->save();
-                }
-                $customer = $this->modx->user;
-            } else {
-                $c = $this->modx->newQuery(modUser::class);
-                $c->leftJoin(modUserProfile::class, 'Profile');
-                $filter = ['username' => $email, 'OR:Profile.email:=' => $email];
-                if (!empty($phone)) {
-                    $filter['OR:Profile.mobilephone:='] = $phone;
-                }
-                $c->where($filter);
-                $c->select('modUser.id');
-                if (!$customer = $this->modx->getObject(modUser::class, $c)) {
-                    $customer = $this->modx->newObject(modUser::class, ['username' => $email, 'password' => md5(rand())]
-                    );
-                    $profile = $this->modx->newObject(modUserProfile::class, [
-                        'email' => $email,
-                        'fullname' => $receiver,
-                        'mobilephone' => $phone
-                    ]);
-                    $customer->addOne($profile);
-                    /** @var modUserSetting $setting */
-                    $setting = $this->modx->newObject(modUserSetting::class);
-                    $setting->fromArray([
-                        'key' => 'cultureKey',
-                        'area' => 'language',
-                        'value' => $this->modx->getOption('cultureKey', null, 'en', true),
-                    ], '', true);
-                    $customer->addMany($setting);
-                    if (!$customer->save()) {
-                        $customer = null;
-                    } elseif ($groups = $this->modx->getOption('ms3_order_user_groups', null, false)) {
-                        $groupRoles = array_map('trim', explode(',', $groups));
-                        foreach ($groupRoles as $groupRole) {
-                            $groupRole = explode(':', $groupRole);
-                            if (count($groupRole) > 1 && !empty($groupRole[1])) {
-                                if (is_numeric($groupRole[1])) {
-                                    $roleId = (int)$groupRole[1];
-                                } else {
-                                    $roleId = $groupRole[1];
-                                }
-                            } else {
-                                $roleId = null;
-                            }
-                            $customer->joinGroup($groupRole[0], $roleId);
-                        }
-                    }
-                }
-            }
+        if (empty($msCustomer)) {
+            $orderResponse = $this->ms3->order->get();
+            $orderData = $orderResponse['data']['order'];
+            $customerData = [
+                'first_name' => $orderData['address_first_name'],
+                'last_name' => $orderData['address_last_name'],
+                'phone' => $orderData['address_phone'],
+                'email' => $orderData['address_email'],
+            ];
+
+            $msCustomer = $this->create($customerData);
         }
 
         $response = $this->ms3->utils->invokeEvent('msOnGetOrderCustomer', [
-            'order' => $this->ms3->order,
-            'customer' => $customer,
+            'controller' => $this->ms3->order,
+            'msCustomer' => $msCustomer,
         ]);
         if (!$response['success']) {
             return $response['message'];
         }
 
-        return $customer instanceof modUser
-            ? $customer->get('id')
-            : 0;
+        if (!empty($msCustomer)) {
+            return $msCustomer->get('id');
+        }
+
+        return 0;
+    }
+
+    public function create(array $customerData)
+    {
+        //TODO  event msOnBeforeCreateCustomer
+        $msCustomer = $this->modx->newObject(msCustomer::class, $customerData);
+        $save = $msCustomer->save();
+        if (!$save) {
+            return null;
+        }
+        //TODO  event msOnCreateCustomer
+        return $msCustomer;
     }
 
     /**

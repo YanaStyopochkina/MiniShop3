@@ -10,3 +10,4 @@
 $_lang['ms3_err_token'] = 'Не указан токен';
 $_lang['ms3_customer'] = 'Покупатель';
 $_lang['ms3_customer_key_empty'] = 'Отсутствует ключ запроса';
+$_lang['ms3_err_customer_nf'] = 'Профиль покупателя не найден';

@@ -14,6 +14,7 @@ class DBStorage
     protected $ctx;
     protected $token;
     protected $draft;
+
     public function __construct(modX $modx, MiniShop3 $ms3)
     {
         $this->modx = $modx;
@@ -31,6 +32,15 @@ class DBStorage
         $this->draft = $this->getDraft($this->token);
         if (empty($this->draft)) {
             $this->draft = $this->newDraft($this->token);
+        }
+        if (empty($this->draft->get('customer_id'))) {
+            $this->ms3->customer->initialize($this->token);
+            $customerResponse = $this->ms3->customer->getFields();
+            if ($customerResponse['success'] && !empty($customerResponse['data']['id'])) {
+                $customer = $customerResponse['data'];
+                $this->draft->set('customer_id', $customer['id']);
+                $this->draft->save();
+            }
         }
         return true;
     }

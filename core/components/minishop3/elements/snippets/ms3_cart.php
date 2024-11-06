@@ -43,10 +43,16 @@ $total = ['count' => 0, 'weight' => 0, 'cost' => 0, 'discount' => 0, 'positions'
 if (!empty($_GET['msorder'])) {
     return '';
 } elseif (empty($status['total_count'])) {
-    return $pdoFetch->getChunk($tpl, compact('total', 'products'));
+    if ($scriptProperties['return'] === 'tpl') {
+        return $pdoFetch->getChunk($tpl, compact('total', 'products'));
+    }
+    return compact('total', 'products');
 }
 if (empty($cart)) {
-    return $pdoFetch->getChunk($tpl, compact('total', 'products'));
+    if ($scriptProperties['return'] === 'tpl') {
+        return $pdoFetch->getChunk($tpl, compact('total', 'products'));
+    }
+    return compact('total', 'products');
 }
 
 // Select cart products

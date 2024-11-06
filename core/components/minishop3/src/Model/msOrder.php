@@ -10,7 +10,8 @@ use xPDO\Om\xPDOSimpleObject;
  * Class msOrder
  *
  * @property integer $user_id
- * @property string $session_id
+ * @property integer $customer_id
+ * @property string $token
  * @property string $createdon
  * @property string $updatedon
  * @property string $num

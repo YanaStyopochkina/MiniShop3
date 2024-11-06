@@ -3,6 +3,7 @@
 namespace MiniShop3\Controllers\Storage\DB;
 
 use MiniShop3\MiniShop3;
+use MiniShop3\Model\msCustomer;
 use MiniShop3\Model\msDelivery;
 use MiniShop3\Model\msOrder;
 use MiniShop3\Model\msOrderAddress;
@@ -356,6 +357,33 @@ class DBOrder extends DBStorage implements OrderInterface
             $this->set($response['data']['data']);
         }
 
+        $customer_id = $this->draft->customer_id;
+        if (empty($this->draft->customer_id)) {
+            $this->ms3->customer->initialize($this->token);
+            $customer_id = $this->ms3->customer->getId();
+            if (empty($customer_id)) {
+                return $this->error('ms3_err_customer_nf');
+            }
+        }
+
+        $addressData = [
+            'updatedon' => time(),
+        ];
+        //TODO  тут возможно понадобится получить клиента через $this->ms3->customer->getFields
+        if (empty($this->order['address_first_name']) && !empty($this->draft->Customer->get('last_name'))) {
+            $this->add('first_name', $this->draft->Customer->get('first_name'));
+        }
+        if (empty($this->order['address_last_name']) && !empty($this->draft->Customer->get('last_name'))) {
+            $this->add('last_name', $this->draft->Customer->get('last_name'));
+        }
+        if (empty($this->order['address_email']) && !empty($this->draft->Customer->get('email'))) {
+            $this->add('email', $this->draft->Customer->get('email'));
+        }
+        if (empty($this->order['address_phone']) && !empty($this->draft->Customer->get('phone'))) {
+            $this->add('phone', $this->draft->Customer->get('phone'));
+        }
+
+
         $response = $this->getDeliveryRequiresFields();
         if (!$response['success']) {
             return $this->error($response['message']);
@@ -371,8 +399,8 @@ class DBOrder extends DBStorage implements OrderInterface
             return $this->error('ms3_order_err_requires', $errors);
         }
 
-        //TODO Беру профиль msCustomer.  Но проверить, регистрируем ли пользователя?
-//        $user_id = $this->ms2->getCustomerId();
+
+        //TODO проверить, регистрируем ли пользователя?
         $user_id = 1;
         if (empty($user_id) || !is_int($user_id)) {
             return $this->error(is_string($user_id) ? $user_id : 'ms3_err_user_nf');
@@ -397,10 +425,9 @@ class DBOrder extends DBStorage implements OrderInterface
             return $this->error($response['message']);
         }
         $cart_cost = $response['data']['cost'] - $delivery_cost;
-
         $num = $this->getNewOrderNum();
-
         $this->draft->fromArray([
+            'customer_id' => $customer_id,
             'user_id' => $user_id,
             'updatedon' => time(),
             'num' => $num,
@@ -408,12 +435,16 @@ class DBOrder extends DBStorage implements OrderInterface
             'cost' => $cart_cost + $delivery_cost,
         ]);
 
-        $this->draft->Address->fromArray([
-            'user_id' => $user_id,
-            'updatedon' => time(),
-        ]);
+        $this->draft->Address->fromArray($addressData);
         $this->draft->save();
 
+        $properties = $this->draft->get('properties');
+        if (!empty($properties['save_address'])) {
+            // Где взять покупателя?
+            // Проверить а нет ли уже такого адреса?
+        }
+
+        // TODO  а нужно здесь это событие?
         $response = $this->ms3->utils->invokeEvent('msOnBeforeCreateOrder', [
             'msOrder' => $this->draft,
             'controller' => $this,
@@ -443,21 +474,20 @@ class DBOrder extends DBStorage implements OrderInterface
         if ($response !== true) {
             return $this->error($response, ['msorder' => $this->draft->get('id')]);
         }
-
-        // Reload order object after changes in changeOrderStatus method
+        // Reload order object after changes in OrderStatus::change method
 
         /** @var msOrder $msOrder */
         $msOrder = $this->modx->getObject(msOrder::class, ['id' => $this->draft->get('id')]);
-        $payment = $this->modx->getObject(
+        $msPayment = $this->modx->getObject(
             msPayment::class,
             ['id' => $msOrder->get('payment_id'), 'active' => 1]
         );
-        if (!$payment) {
+        if (!$msPayment) {
             return $this->success('', ['msorder' => $msOrder->get('id')]);
         }
 
         // TODO  редирект на конкретный ID страницы, заданный через системную настройку или сниппет.
-        $response = $payment->send($msOrder);
+        $response = $msPayment->send($msOrder);
         if (!$response['success']) {
             return $this->error($response['message']);
         }
@@ -612,16 +642,36 @@ class DBOrder extends DBStorage implements OrderInterface
             $this->draft->set($key, $value);
             $this->draft->set('updatedon', time());
             $this->draft->save();
-            return true;
+//            return true;
         }
         if (in_array($key, array_keys($this->draft->Address->_fields))) {
             $this->draft->Address->set($key, $value);
             $this->draft->Address->save();
             $this->draft->set('updatedon', time());
             $this->draft->save();
-            return true;
+//            return true;
         }
-        // check msCustomer
+
+        if ($key === 'save_address' && !empty($value)) {
+            $properties = $this->draft->get('properties');
+            $properties['save_address'] = 1;
+            $this->draft->set('properties', $properties);
+            $this->draft->set('updatedon', time());
+            $this->draft->save();
+        }
+
+        if (!empty($this->draft->get('customer_id'))) {
+            $customer = $this->draft->getOne('Customer');
+
+            //TODO  получить текущего customer, если есть сохранить ему поля
+//        $customerFields = $this->modx->getFields(msCustomer::class);
+//        if (in_array($key, $customerFields)) {
+//            $customer->set($key, $value);
+//            $customer->save();
+//            return true;
+//        }
+        }
+
         return false;
     }
 

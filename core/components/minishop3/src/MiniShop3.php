@@ -210,7 +210,7 @@ class MiniShop3
                 break;
             case 'customer/get':
                 $this->customer->initialize($token);
-                $response = $this->customer->get();
+                $response = $this->customer->getFields();
                 break;
             case 'customer/add':
                 $this->customer->initialize($token);

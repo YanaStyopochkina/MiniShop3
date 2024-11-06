@@ -20,18 +20,24 @@ $validationRules = $modx->getOption('validationRules', $scriptProperties);
 
 $ms3->customer->initialize($token);
 $ms3->customer->registerValidation($validationRules);
-$customer = $ms3->customer->get();
+$customerResponse = $ms3->customer->getFields();
+$customer = [];
+if ($customerResponse['success']) {
+    $customer = $customerResponse['data'];
+}
 $errors = [];
 $form = [];
 
-foreach ($customer as $key => $value) {
-    switch ($key) {
-        case 'id':
-        case 'token':
-        case 'user_id':
-            break;
-        default:
-            $form[$key] = $value;
+if (!empty($customer)) {
+    foreach ($customer as $key => $value) {
+        switch ($key) {
+            case 'id':
+            case 'token':
+            case 'user_id':
+                break;
+            default:
+                $form[$key] = $value;
+        }
     }
 }
 

@@ -8,6 +8,7 @@ require_once($autoload);
 
 use MiniShop3\MiniShop3;
 use MiniShop3\Model\msCustomer;
+use MiniShop3\Model\msCustomerAddress;
 use MODX\Revolution\modUser;
 use MODX\Revolution\modUserProfile;
 use MODX\Revolution\modUserSetting;
@@ -424,6 +425,32 @@ class Customer
         }
         //TODO  event msOnCreateCustomer
         return $msCustomer;
+    }
+
+    public function addAddress(array $customerAddressData): bool
+    {
+        if (empty($customerAddressData['street'])) {
+            return false;
+        }
+
+        if (empty($customerAddressData['building'])) {
+            return false;
+        }
+
+        // TODO логика проверки существования слишком простая.  Подумать
+        // TODO  сделать события?
+        $isExists = $this->modx->getCount(msCustomerAddress::class, [
+            'street' => $customerAddressData['street'],
+            'building' => $customerAddressData['building'],
+        ]);
+        if (!empty($isExists)) {
+            return false;
+        }
+
+        $msCustomerAddress = $this->modx->newObject(msCustomerAddress::class, $customerAddressData);
+        $msCustomerAddress->save();
+
+        return true;
     }
 
     /**

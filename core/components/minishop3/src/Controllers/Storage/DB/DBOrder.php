@@ -439,9 +439,21 @@ class DBOrder extends DBStorage implements OrderInterface
         $this->draft->save();
 
         $properties = $this->draft->get('properties');
-        if (!empty($properties['save_address'])) {
-            // Где взять покупателя?
-            // Проверить а нет ли уже такого адреса?
+        if (!empty($properties['save_address']) && !empty($customer_id)) {
+            $customerAddressData = [
+                'country' => $this->order['address_country'],
+                'index' => $this->order['address_index'],
+                'region' => $this->order['address_region'],
+                'city' => $this->order['address_city'],
+                'metro' => $this->order['address_metro'],
+                'street' => $this->order['address_street'],
+                'building' => $this->order['address_building'],
+                'entrance' => $this->order['address_entrance'],
+                'floor' => $this->order['address_floor'],
+                'room' => $this->order['address_room'],
+                'comment' => $this->order['address_comment'],
+            ];
+            $this->ms3->customer->addAddress($customerAddressData);
         }
 
         // TODO  а нужно здесь это событие?

@@ -183,7 +183,7 @@ return [
     ],
     'ms3_order_address_fields' => [
         'xtype' => 'textarea',
-        'value' => 'receiver,phone,index,country,region,city,metro,street,building,entrance,floor,room,comment,text_address',
+        'value' => 'first_name,last_name,phone,index,country,region,city,metro,street,building,entrance,floor,room,comment,text_address',
         'area' => 'ms3_order',
     ],
     'ms3_order_product_fields' => [
@@ -299,5 +299,21 @@ return [
         'value' => '2,3',
         'xtype' => 'textfield',
         'area' => 'ms3_statuses',
+    ],
+
+    'ms3_customer_grid_fields' => [
+        'value' => 'id,first_name,last_name,email,phone',
+        'xtype' => 'textarea',
+        'area' => 'ms3_customers',
+    ],
+    'ms3_customer_window_fields' => [
+        'value' => 'id,first_name,last_name,email,phone',
+        'xtype' => 'textarea',
+        'area' => 'ms3_customers',
+    ],
+    'ms3_customer_address_grid_fields' => [
+        'value' => 'id,city,street,building',
+        'xtype' => 'textarea',
+        'area' => 'ms3_customers',
     ],
 ];

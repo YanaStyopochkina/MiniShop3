@@ -154,8 +154,10 @@ Ext.extend(ms3.window.UpdateOrder, ms3.window.Default, {
 
     getAddressFields: function (config) {
         const all = {
-            receiver: {},
+            first_name: {},
+            last_name: {},
             phone: {},
+            email: {},
             index: {},
             country: {},
             region: {},
@@ -201,14 +203,9 @@ Ext.extend(ms3.window.UpdateOrder, ms3.window.Default, {
         let n;
         if (tmp.length > 0) {
             for (i = 0; i < tmp.length; i++) {
-                if (i === 0) {
-                    fields.push(addx(.7, .3));
-                } else if (i === 2) {
-                    fields.push(addx(.3, .7));
-                } else if (i % 2 === 0) {
+                if (i % 2 === 0) {
                     fields.push(addx());
                 }
-
                 if (i <= 1) {
                     n = 0;
                 } else {

@@ -10,7 +10,7 @@
 include_once('setting.inc.php');
 $files = scandir(dirname(__FILE__));
 foreach ($files as $file) {
-    if (strpos($file, 'msp.') === 0) {
+    if (str_starts_with($file, 'msp.')) {
         @include_once($file);
     }
 }
@@ -21,6 +21,9 @@ $_lang['ms3_order'] = 'Заказ';
 $_lang['ms3_orders'] = 'Заказы';
 $_lang['ms3_orders_intro'] = 'Панель управления заказами. Вы можете выбирать сразу несколько заказов через Shift или Ctrl(Cmd).';
 $_lang['ms3_orders_desc'] = 'Управление заказами';
+$_lang['ms3_customers'] = 'Клиенты';
+$_lang['ms3_customers_desc'] = 'Управление клиентами';
+$_lang['ms3_orders_desc'] = 'Управление клиентами';
 $_lang['ms3_settings'] = 'Настройки';
 $_lang['ms3_settings_intro'] = 'Панель управления настройками магазина. Здесь вы можете указать способы оплаты, доставки и статусы заказов.';
 $_lang['ms3_settings_desc'] = 'Статусы заказов, параметры оплаты и доставки';
@@ -120,7 +123,8 @@ $_lang['ms3_frontend_address'] = 'Адрес доставки';
 $_lang['ms3_frontend_customer'] = 'Покупатель';
 
 $_lang['ms3_frontend_comment'] = 'Комментарий';
-$_lang['ms3_frontend_receiver'] = 'Получатель';
+$_lang['ms3_frontend_first_name'] = 'Имя';
+$_lang['ms3_frontend_last_name'] = 'Фамилия';
 $_lang['ms3_frontend_email'] = 'Email';
 $_lang['ms3_frontend_phone'] = 'Телефон';
 $_lang['ms3_frontend_index'] = 'Почтовый индекс';
@@ -133,8 +137,6 @@ $_lang['ms3_frontend_room'] = 'Кв.';
 $_lang['ms3_frontend_entrance'] = 'Подъезд';
 $_lang['ms3_frontend_floor'] = 'Этаж';
 $_lang['ms3_frontend_text_address'] = 'Адрес одной строкой';
-$_lang['ms3_frontend_first_name'] = 'Имя';
-$_lang['ms3_frontend_last_name'] = 'Фамилия';
 
 $_lang['ms3_frontend_order_cost'] = 'Итого, с доставкой';
 $_lang['ms3_frontend_order_submit'] = 'Сделать заказ';

@@ -11,7 +11,8 @@ use xPDO\Om\xPDOSimpleObject;
  * @property integer $user_id
  * @property string $createdon
  * @property string $updatedon
- * @property string $receiver
+ * @property string $first_name
+ * @property string $last_name
  * @property string $phone
  * @property string $email
  * @property string $country

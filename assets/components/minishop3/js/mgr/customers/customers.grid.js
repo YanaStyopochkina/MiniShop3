@@ -1,13 +1,13 @@
-ms3.grid.Orders = function (config) {
+ms3.grid.Customers = function (config) {
     config = config || {};
     if (!config.id) {
-        config.id = 'ms3-grid-orders';
+        config.id = 'ms3-grid-customers';
     }
     config.disableContextMenuAction = true;
 
     Ext.applyIf(config, {
         baseParams: {
-            action: 'MiniShop3\\Processors\\Order\\GetList',
+            action: 'MiniShop3\\Processors\\Customer\\GetList',
             sort: 'id',
             dir: 'desc',
         },
@@ -16,33 +16,21 @@ ms3.grid.Orders = function (config) {
         stateful: true,
         stateId: config.id,
     });
-    ms3.grid.Orders.superclass.constructor.call(this, config);
+    ms3.grid.Customers.superclass.constructor.call(this, config);
 };
-Ext.extend(ms3.grid.Orders, ms3.grid.Default, {
+Ext.extend(ms3.grid.Customers, ms3.grid.Default, {
 
     getFields: function () {
-        return ms3.config['order_grid_fields'];
+        return ms3.config['customer_grid_fields'];
     },
 
     getColumns: function () {
         const all = {
             id: {width: 35},
-            customer: {width: 100, renderer: function (val, cell, row) {
-                return ms3.utils.userLink(val, row.data['user_id'], true);
-            }},
-            num: {width: 50},
             first_name: {width: 100},
             last_name: {width: 100},
-            createdon: {width: 75, renderer: ms3.utils.formatDate},
-            updatedon: {width: 75, renderer: ms3.utils.formatDate},
-            cost: {width: 50, renderer: this._renderCost},
-            cart_cost: {width: 50},
-            delivery_cost: {width: 75},
-            weight: {width: 50},
-            status_name: {width: 75, renderer: ms3.utils.renderBadge},
-            delivery_name: {width: 75},
-            payment_name: {width: 75},
-            context: {width: 50},
+            email: {width: 100},
+            phone: {width: 100},
             actions: {width: 75, id: 'actions', renderer: ms3.utils.renderActions, sortable: false},
         };
 
@@ -50,14 +38,12 @@ Ext.extend(ms3.grid.Orders, ms3.grid.Default, {
         const columns = [];
         for (let i = 0; i < fields.length; i++) {
             const field = fields[i];
-            if (all[field]) {
-                Ext.applyIf(all[field], {
-                    header: _('ms3_' + field),
-                    dataIndex: field,
-                    sortable: true,
-                });
-                columns.push(all[field]);
-            }
+            Ext.applyIf(all[field], {
+                header: _('ms3_' + field),
+                dataIndex: field,
+                sortable: true,
+            });
+            columns.push(all[field]);
         }
 
         return columns;
@@ -71,19 +57,19 @@ Ext.extend(ms3.grid.Orders, ms3.grid.Default, {
         return {
             rowDblClick: function (grid, rowIndex, e) {
                 const row = grid.store.getAt(rowIndex);
-                this.updateOrder(grid, e, row);
+                this.updateCustomer(grid, e, row);
             },
             afterrender: function (grid) {
                 const params = ms3.utils.Hash.get();
-                const order = params['order'] || '';
-                if (order) {
-                    this.updateOrder(grid, Ext.EventObject, {data: {id: order}});
+                const customer = params['customer'] || '';
+                if (customer) {
+                    this.update(grid, Ext.EventObject, {data: {id: customer}});
                 }
             },
         };
     },
 
-    orderAction: function (method) {
+    action: function (method) {
         const ids = this._getSelectedIds();
         if (!ids.length) {
             return false;
@@ -91,7 +77,7 @@ Ext.extend(ms3.grid.Orders, ms3.grid.Default, {
         MODx.Ajax.request({
             url: this.config.url,
             params: {
-                action: 'MiniShop3\\Processors\\Order\\Multiple',
+                action: 'MiniShop3\\Processors\\Customer\\Multiple',
                 method: method,
                 ids: Ext.util.JSON.encode(ids),
             },
@@ -111,7 +97,7 @@ Ext.extend(ms3.grid.Orders, ms3.grid.Default, {
         })
     },
 
-    updateOrder: function (btn, e, row) {
+    update: function (btn, e, row) {
         if (typeof(row) != 'undefined') {
             this.menu.record = row.data;
         }
@@ -120,20 +106,20 @@ Ext.extend(ms3.grid.Orders, ms3.grid.Default, {
         MODx.Ajax.request({
             url: this.config.url,
             params: {
-                action: 'MiniShop3\\Processors\\Order\\Get',
+                action: 'MiniShop3\\Processors\\Customer\\Get',
                 id: id
             },
             listeners: {
                 success: {
                     fn: function (r) {
-                        let w = Ext.getCmp('ms3-window-order-update');
+                        let w = Ext.getCmp('ms3-window-customer-update');
                         if (w) {
                             w.close();
                         }
 
                         w = MODx.load({
-                            xtype: 'ms3-window-order-update',
-                            id: 'ms3-window-order-update',
+                            xtype: 'ms3-window-customer-update',
+                            id: 'ms3-window-customer-update',
                             record: r.object,
                             listeners: {
                                 success: {
@@ -143,15 +129,15 @@ Ext.extend(ms3.grid.Orders, ms3.grid.Default, {
                                 },
                                 hide: {
                                     fn: function () {
-                                        ms3.utils.Hash.remove('order');
-                                        if (ms3.grid.Orders.changed === true) {
-                                            Ext.getCmp('ms3-grid-orders').getStore().reload();
-                                            ms3.grid.Orders.changed = false;
+                                        ms3.utils.Hash.remove('customer');
+                                        if (ms3.grid.Customers.changed === true) {
+                                            Ext.getCmp('ms3-grid-customers').getStore().reload();
+                                            ms3.grid.Customers.changed = false;
                                         }
                                     }
                                 },
                                 afterrender: function () {
-                                    ms3.utils.Hash.add('order', r.object['id']);
+                                    ms3.utils.Hash.add('customer', r.object['id']);
                                 }
                             }
                         });
@@ -164,7 +150,7 @@ Ext.extend(ms3.grid.Orders, ms3.grid.Default, {
         });
     },
 
-    removeOrder: function () {
+    remove: function () {
         const ids = this._getSelectedIds();
 
         Ext.MessageBox.confirm(
@@ -173,19 +159,13 @@ Ext.extend(ms3.grid.Orders, ms3.grid.Default, {
                 ? _('ms3_menu_remove_multiple_confirm')
                 : _('ms3_menu_remove_confirm'),
             function (val) {
-                if (val == 'yes') {
-                    this.orderAction('Remove');
+                if (val === 'yes') {
+                    this.action('Remove');
                 }
             },
             this
         );
     },
 
-    _renderCost: function (val, idx, rec) {
-        return rec.data['type'] != undefined && rec.data['type'] == 1
-            ? '-' + val
-            : val;
-    },
-
 });
-Ext.reg('ms3-grid-orders', ms3.grid.Orders);
+Ext.reg('ms3-grid-customers', ms3.grid.Customers);

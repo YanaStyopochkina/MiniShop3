@@ -2,7 +2,7 @@
     <div class="row">
         <div class="col-12 col-md-6">
             <h4>{'ms3_frontend_credentials' | lexicon}:</h4>
-            {foreach ['email','receiver','phone'] as $field}
+            {foreach ['email','first_name','last_name','phone'] as $field}
                 <div class="form-group row input-parent">
                     <label class="col-md-4 col-form-label" for="{$field}">
                         {('ms3_frontend_' ~ $field) | lexicon} <span class="required-star">*</span>

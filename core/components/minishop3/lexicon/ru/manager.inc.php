@@ -58,7 +58,8 @@ $_lang['ms3_username'] = 'Логин';
 $_lang['ms3_fullname'] = 'Пользователь';
 $_lang['ms3_resource'] = 'Ресурс';
 
-$_lang['ms3_receiver'] = 'Получатель';
+$_lang['ms3_first_name'] = 'Имя';
+$_lang['ms3_last_name'] = 'Фамилия';
 $_lang['ms3_index'] = 'Индекс';
 $_lang['ms3_region'] = 'Область';
 $_lang['ms3_city'] = 'Город';

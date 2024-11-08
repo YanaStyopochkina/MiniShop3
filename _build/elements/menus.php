@@ -12,6 +12,12 @@ return [
         'menuindex' => 0,
         'action' => 'mgr/orders',
     ],
+    'ms3_customers' => [
+        'description' => 'ms3_customers_desc',
+        'parent' => 'miniShop3',
+        'menuindex' => 0,
+        'action' => 'mgr/customers',
+    ],
     'ms3_settings' => [
         'description' => 'ms3_settings_desc',
         'parent' => 'miniShop3',

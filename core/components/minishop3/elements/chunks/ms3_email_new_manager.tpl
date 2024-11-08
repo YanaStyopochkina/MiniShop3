@@ -10,7 +10,7 @@
             <td>
                 <h3 style="{$style.h}{$style.h3} margin-bottom: 20px;">{'ms3_3frontend_credentials' | lexicon}</h3>
                 <table style="width:95%;margin:auto;">
-                    {foreach ['receiver','phone','email'] as $field}
+                    {foreach ['first_name','last_name','phone','email'] as $field}
                         {if $address[$field]}
                             <tr>
                                 <td>{('ms3_3frontend_' ~ $field) | lexicon}: {$address[$field]} </td>

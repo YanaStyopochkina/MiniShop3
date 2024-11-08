@@ -2,6 +2,7 @@
 
 namespace MiniShop3\Processors\Order;
 
+use MiniShop3\Model\msCustomer;
 use MiniShop3\Model\msDelivery;
 use MiniShop3\Model\msOrder;
 use MiniShop3\Model\msOrderAddress;
@@ -59,8 +60,9 @@ class GetList extends GetListProcessor
      */
     public function prepareQueryBeforeCount(xPDOQuery $c)
     {
-        $c->leftJoin(modUser::class, 'User');
-        $c->leftJoin(modUserProfile::class, 'UserProfile');
+//        $c->leftJoin(modUser::class, 'User');
+//        $c->leftJoin(modUserProfile::class, 'UserProfile');
+//        $c->leftJoin(msCustomer::class, 'Customer');
         $c->leftJoin(msOrderStatus::class, 'Status');
         $c->leftJoin(msDelivery::class, 'Delivery');
         $c->leftJoin(msPayment::class, 'Payment');
@@ -90,9 +92,9 @@ class GetList extends GetListProcessor
                     'num:LIKE' => "{$query}%",
                     'OR:order_comment:LIKE' => "%{$query}%",
                     'OR:Address.comment:LIKE' => "%{$query}%",
-                    'OR:User.username:LIKE' => "%{$query}%",
-                    'OR:UserProfile.fullname:LIKE' => "%{$query}%",
-                    'OR:UserProfile.email:LIKE' => "%{$query}%",
+                    'OR:Address.first_name:LIKE' => "%{$query}%",
+                    'OR:Address.last_name:LIKE' => "%{$query}%",
+                    'OR:Address.email:LIKE' => "%{$query}%",
                     'OR:Address.phone:LIKE' => "%{$query}%",
                 ]);
             }
@@ -104,7 +106,7 @@ class GetList extends GetListProcessor
         }
         if ($customer = $this->getProperty('customer')) {
             $c->where([
-                'user_id' => (int)$customer,
+                'customer_id' => (int)$customer,
             ]);
         }
         if ($context = $this->getProperty('context')) {
@@ -129,7 +131,7 @@ class GetList extends GetListProcessor
         $c->select(
             $this->modx->getSelectColumns(msOrder::class, 'msOrder', '', $exclude, true) . ',
             `msOrder`.status_id, `msOrder`.delivery_id, `msOrder`.payment_id,
-            `UserProfile`.fullname as `customer`, `User`.username as `customer_username`,
+            `Address`.first_name, `Address`.last_name, `Address`.phone, `Address`.email,
             `Status`.name as `status_name`, `Status`.color, `Delivery`.name as `delivery_name`, `Payment`.name as `payment_name`'
         );
         $c->groupby('msOrder.id');
@@ -149,7 +151,7 @@ class GetList extends GetListProcessor
         $start = (int)$this->getProperty('start');
 
         $q = clone $c;
-        $q->query['columns'] = ['SQL_CALC_FOUND_ROWS msOrder.id, fullname as customer'];
+        $q->query['columns'] = ['SQL_CALC_FOUND_ROWS msOrder.id, `Address`.first_name'];
         $sortClassKey = $this->getSortClassKey();
         $sortKey = $this->modx->getSelectColumns(
             $sortClassKey,
@@ -209,9 +211,13 @@ class GetList extends GetListProcessor
     public function prepareArray(array $data)
     {
         $ms3 = $this->modx->services->get('ms3');
-        if (empty($data['customer'])) {
-            $data['customer'] = $data['customer_username'];
-        }
+//        if (empty($data['customer'])) {
+//            $data['customer'] = $data['customer_username'];
+//        }
+        $data['customer'] = implode(' ', [
+            $data['first_name'],
+            $data['last_name'],
+        ]);
         if (isset($data['cost'])) {
             $data['cost'] = $ms3->format->price($data['cost']);
         }

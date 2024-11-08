@@ -124,14 +124,6 @@ class msOrderLog extends \MiniShop3\Model\msOrderLog
                         'owner' => 'foreign',
                         'cardinality' => 'one',
                     ],
-                'CustomerProfile' =>
-                    [
-                        'class' => 'MiniShop3\\Model\\msCustomerProfile',
-                        'local' => 'user_id',
-                        'foreign' => 'internalKey',
-                        'owner' => 'foreign',
-                        'cardinality' => 'one',
-                    ],
                 'Order' =>
                     [
                         'class' => 'MiniShop3\\Model\\msOrder',

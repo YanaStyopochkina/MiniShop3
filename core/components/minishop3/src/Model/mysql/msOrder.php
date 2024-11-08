@@ -279,14 +279,6 @@ class msOrder extends \MiniShop3\Model\msOrder
                         'cardinality' => 'one',
                         'owner' => 'foreign',
                     ],
-                'CustomerProfile' =>
-                    [
-                        'class' => 'MiniShop3\\Model\\msCustomerProfile',
-                        'local' => 'user_id',
-                        'foreign' => 'id',
-                        'owner' => 'foreign',
-                        'cardinality' => 'one',
-                    ],
                 'Status' =>
                     [
                         'class' => 'MiniShop3\\Model\\msOrderStatus',

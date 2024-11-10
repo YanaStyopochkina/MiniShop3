@@ -441,6 +441,7 @@ class DBOrder extends DBStorage implements OrderInterface
         $properties = $this->draft->get('properties');
         if (!empty($properties['save_address']) && !empty($customer_id)) {
             $customerAddressData = [
+                'customer_id' => $customer_id,
                 'country' => $this->order['address_country'],
                 'index' => $this->order['address_index'],
                 'region' => $this->order['address_region'],

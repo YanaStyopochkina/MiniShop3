@@ -499,6 +499,16 @@ class DBOrder extends DBStorage
             $this->set($response['data']['data']);
         }
 
+        $this->ms3->cart->initialize($this->ctx, $this->token);
+        $response = $this->ms3->cart->status();
+        if (!$response['success']) {
+            return $this->error($response['message']);
+        }
+        $cart_status = $response['data'];
+        if (empty($cart_status['total_count'])) {
+            return $this->error('ms3_order_err_empty');
+        }
+
         $customer_id = $this->draft->customer_id;
         if (empty($this->draft->customer_id)) {
             $this->ms3->customer->initialize($this->token);
@@ -547,34 +557,21 @@ class DBOrder extends DBStorage
         if (empty($user_id) || !is_int($user_id)) {
             return $this->error(is_string($user_id) ? $user_id : 'ms3_err_user_nf');
         }
-        $this->ms3->cart->initialize($this->ctx, $this->token);
-        $response = $this->ms3->cart->status();
-        if (!$response['success']) {
-            return $this->error($response['message']);
-        }
-        $cart_status = $response['data'];
-        if (empty($cart_status['total_count'])) {
-            return $this->error('ms3_order_err_empty');
-        }
 
-        $response = $this->getCost(false, true);
+        $response = $this->getCost();
         if (!$response['success']) {
             return $this->error($response['message']);
         }
-        $delivery_cost = $response['data']['cost'];
-        $response = $this->getCost(true, true);
-        if (!$response['success']) {
-            return $this->error($response['message']);
-        }
-        $cart_cost = $response['data']['cost'] - $delivery_cost;
+        $deliveryCost = $response['data']['delivery_cost'];
+        $cost =  $response['data']['cart_cost'];
         $num = $this->getNewOrderNum();
         $this->draft->fromArray([
             'customer_id' => $customer_id,
             'user_id' => $user_id,
             'updatedon' => time(),
             'num' => $num,
-            'delivery_cost' => $delivery_cost,
-            'cost' => $cart_cost + $delivery_cost,
+            'delivery_cost' => $deliveryCost,
+            'cost' => $cost,
         ]);
 
         $this->draft->Address->fromArray($addressData);

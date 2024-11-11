@@ -20,5 +20,8 @@ ms3.form = {
     if (response.shouldRender) {
       ms3.callback.cart.render(response)
     }
+    if (response.data.redirect) {
+      location.href = response.data.redirect
+    }
   }
 }

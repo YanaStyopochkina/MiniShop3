@@ -345,4 +345,18 @@ return [
             ],
         ],
     ],
+    'msOrderTotal' => [
+        'file' => 'ms3_order_total',
+        'description' => '',
+        'properties' => [
+            'tpl' => [
+                'type' => 'textfield',
+                'value' => '',
+            ],
+            'return' => [
+                'type' => 'textfield',
+                'value' => 'data',
+            ]
+        ],
+    ],
 ];

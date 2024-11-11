@@ -2,18 +2,13 @@
 
 namespace MiniShop3\Controllers\Storage\DB;
 
-use MiniShop3\MiniShop3;
-use MiniShop3\Model\msCustomer;
 use MiniShop3\Model\msDelivery;
 use MiniShop3\Model\msOrder;
-use MiniShop3\Model\msOrderAddress;
 use MiniShop3\Model\msPayment;
-use MODX\Revolution\modX;
-use MiniShop3\Controllers\Order\OrderInterface;
 use Rakit\Validation\Validator;
 use MiniShop3\Controllers\Order\OrderStatus;
 
-class DBOrder extends DBStorage implements OrderInterface
+class DBOrder extends DBStorage
 {
     private $config;
     private $order;
@@ -82,78 +77,225 @@ class DBOrder extends DBStorage implements OrderInterface
         );
     }
 
-    public function getCost($with_cart = true, $only_cost = false): array
+    public function getCartCost()
     {
-        $response = $this->ms3->utils->invokeEvent('msOnBeforeGetOrderCost', [
+        if (empty($this->token)) {
+            return $this->error('ms3_err_token');
+        }
+        $this->initDraft();
+
+        if (empty($this->order)) {
+            $response = $this->get();
+            if ($response['success']) {
+                $this->order = $response['data']['order'];
+            }
+        }
+
+        // TODO проверить доступна ли вообще корзина при прямом независимом вызове метода
+        $response = $this->ms3->utils->invokeEvent('msOnBeforeGetCartCost', [
             'controller' => $this,
             'cart' => $this->ms3->cart,
-            'with_cart' => $with_cart,
-            'only_cost' => $only_cost,
         ]);
         if (!$response['success']) {
             return $this->error($response['message']);
         }
-
-        $cost = 0;
-        $status = [];
         $this->ms3->cart->initialize($this->ms3->config['ctx'], $this->token);
         $response = $this->ms3->cart->status();
-        if ($response['success']) {
-            $status = $response['data'];
-            $cost = $with_cart
-                ? $status['total_cost']
-                : 0;
+        if (!$response['success']) {
+            return $this->error($response['message']);
         }
 
-        $delivery_cost = 0;
-        if (!empty($this->order['delivery_id'])) {
-            /** @var msDelivery $msDelivery */
-            $msDelivery = $this->modx->getObject(
-                msDelivery::class,
-                ['id' => $this->order['delivery_id']]
-            );
-            if ($msDelivery) {
-                $cost = $msDelivery->getCost($this, $cost);
-                $delivery_cost = $cost - $status['total_cost'];
-                $this->setDeliveryCost($delivery_cost);
-            }
-        }
+        $status = $response['data'];
+        $cost = $status['total_cost'];
 
-        if (!empty($this->order['payment_id'])) {
-            /** @var msPayment $msPayment */
-            $msPayment = $this->modx->getObject(
-                msPayment::class,
-                ['id' => $this->order['payment_id']]
-            );
-            if ($msPayment) {
-                $cost = $msPayment->getCost($this, $cost);
-            }
-        }
-
-        $response = $this->ms3->utils->invokeEvent('msOnGetOrderCost', [
+        $response = $this->ms3->utils->invokeEvent('msOnGetCartCost', [
             'controller' => $this,
             'cart' => $this->ms3->cart,
-            'with_cart' => $with_cart,
-            'only_cost' => $only_cost,
             'cost' => $cost,
-            'delivery_cost' => $delivery_cost,
         ]);
         if (!$response['success']) {
             return $this->error($response['message']);
         }
         $cost = $response['data']['cost'];
-        $delivery_cost = $response['data']['delivery_cost'];
+        return $this->success('ms3_order_getcost_success', [
+            'cost' => $cost,
+        ]);
+    }
 
-        $data = $only_cost
-            ? [
-                'cost' => $cost,
-            ]
-            : [
-                'cost' => $cost,
-                'cart_cost' => $status['total_cost'],
-                'discount_cost' => $status['total_discount'],
-                'delivery_cost' => $delivery_cost
-            ];
+    public function getDeliveryCost()
+    {
+        if (empty($this->token)) {
+            return $this->error('ms3_err_token');
+        }
+        $this->initDraft();
+
+        if (empty($this->order)) {
+            $response = $this->get();
+            if ($response['success']) {
+                $this->order = $response['data']['order'];
+            }
+        }
+
+        // TODO проверить доступна ли вообще корзина при прямом независимом вызове метода
+        $response = $this->ms3->utils->invokeEvent('msOnBeforeGetDeliveryCost', [
+            'storageController' => $this,
+            'cartController' => $this->ms3->cart,
+            'orderController' => $this->ms3->order
+        ]);
+        if (!$response['success']) {
+            return $this->error($response['message']);
+        }
+
+        $deliveryCost = 0;
+        if (empty($this->order['delivery_id'])) {
+            return $this->success('ms3_order_getcost_success', [
+                'cost' => $deliveryCost,
+            ]);
+        }
+
+        /** @var msDelivery $msDelivery */
+        $msDelivery = $this->modx->getObject(
+            msDelivery::class,
+            ['id' => $this->order['delivery_id']]
+        );
+        if (!$msDelivery) {
+            return $this->success('ms3_order_getcost_success', [
+                'cost' => $deliveryCost,
+            ]);
+        }
+
+        $cartCostResponse = $this->getCartCost();
+        $cartCost = 0;
+        if ($cartCostResponse['success']) {
+            $cartCost = $cartCostResponse['data']['cost'];
+        }
+        //TODO пересмотреть модель доставки и ее методы
+        $costWithDelivery = $msDelivery->getCost($this, $cartCost);
+        $deliveryCost = $costWithDelivery - $cartCost;
+
+        $response = $this->ms3->utils->invokeEvent('msOnGetDeliveryCost', [
+            'storageController' => $this,
+            'cartController' => $this->ms3->cart,
+            'orderController' => $this->ms3->order,
+            'cost' => $deliveryCost,
+        ]);
+        if (!$response['success']) {
+            return $this->error($response['message']);
+        }
+        $deliveryCost = $response['data']['cost'];
+
+        $this->setDeliveryCost($deliveryCost);
+        return $this->success('ms3_order_getcost_success', [
+            'cost' => $deliveryCost,
+        ]);
+    }
+
+    public function getPaymentCost()
+    {
+        if (empty($this->token)) {
+            return $this->error('ms3_err_token');
+        }
+        $this->initDraft();
+
+        if (empty($this->order)) {
+            $response = $this->get();
+            if ($response['success']) {
+                $this->order = $response['data']['order'];
+            }
+        }
+
+        // TODO проверить доступна ли вообще корзина при прямом независимом вызове метода
+        $response = $this->ms3->utils->invokeEvent('msOnBeforeGetPaymentCost', [
+            'storageController' => $this,
+            'cartController' => $this->ms3->cart,
+            'orderController' => $this->ms3->order
+        ]);
+        if (!$response['success']) {
+            return $this->error($response['message']);
+        }
+
+        $paymentCost = 0;
+        if (empty($this->order['payment_id'])) {
+            return $this->success('ms3_order_getcost_success', [
+                'cost' => $paymentCost,
+            ]);
+        }
+
+        /** @var msPayment $msPayment */
+        $msPayment = $this->modx->getObject(
+            msPayment::class,
+            ['id' => $this->order['payment_id']]
+        );
+        if (!$msPayment) {
+            return $this->success('ms3_order_getcost_success', [
+                'cost' => $paymentCost,
+            ]);
+        }
+
+        $cartCostResponse = $this->getCartCost();
+        $cartCost = 0;
+        if ($cartCostResponse['success']) {
+            $cartCost = $cartCostResponse['data']['cost'];
+        }
+        //TODO пересмотреть модель оплаты  и ее методы
+        $costWithPayment = $msPayment->getCost($this, $cartCost);
+        $paymentCost = $costWithPayment - $cartCost;
+
+        $response = $this->ms3->utils->invokeEvent('msOnGetPaymentCost', [
+            'storageController' => $this,
+            'cartController' => $this->ms3->cart,
+            'orderController' => $this->ms3->order,
+            'cost' => $paymentCost,
+        ]);
+        if (!$response['success']) {
+            return $this->error($response['message']);
+        }
+        $paymentCost = $response['data']['cost'];
+
+        return $this->success('', [
+            'cost' => $paymentCost,
+        ]);
+    }
+
+    public function getCost($only_cost = false): array
+    {
+        $cartCostResponse = $this->getCartCost();
+        $cartCost = 0;
+        if ($cartCostResponse['success']) {
+            $cartCost = $cartCostResponse['data']['cost'];
+        }
+
+        $deliveryCostResponse = $this->getDeliveryCost();
+        $deliveryCost = 0;
+        if ($deliveryCostResponse['success']) {
+            $deliveryCost = $deliveryCostResponse['data']['cost'];
+        }
+
+        $cartPaymentResponse = $this->getPaymentCost();
+        $paymentCost = 0;
+        if ($cartPaymentResponse['success']) {
+            $paymentCost = $cartPaymentResponse['data']['cost'];
+        }
+
+        $cost = $cartCost + $deliveryCost + $paymentCost;
+
+        if ($only_cost) {
+            return $this->success('ms3_order_getcost_success', ['cost' => $cost]);
+        }
+
+        $data = [
+            'cost' => $cost,
+            'cart_cost' => $cartCost,
+            'delivery_cost' => $deliveryCost,
+            'payment_cost' => $paymentCost,
+        ];
+
+        $response = $this->ms3->cart->status();
+        if ($response['success']) {
+            $status = $response['data'];
+            $data = array_merge($data, $status);
+        }
+
         return $this->success('ms3_order_getcost_success', $data);
     }
 

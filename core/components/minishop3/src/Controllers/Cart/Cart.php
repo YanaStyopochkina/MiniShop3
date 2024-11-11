@@ -63,7 +63,7 @@ class Cart
     /**
      * @return array
      */
-    public function get()
+    public function get(): array
     {
         return $this->storage->get();
     }

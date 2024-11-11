@@ -3,6 +3,12 @@
 return [
     'msOnBeforeGetCart',
     'msOnGetCart',
+    'msOnBeforeGetCartCost',
+    'msOnGetCartCost',
+    'msOnBeforeGetDeliveryCost',
+    'msOnGetDeliveryCost',
+    'msOnBeforeGetPaymentCost',
+    'msOnGetPaymentCost',
     'msOnBeforeAddToCart',
     'msOnAddToCart',
     'msOnBeforeChangeInCart',

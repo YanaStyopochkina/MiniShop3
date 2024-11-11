@@ -49,14 +49,22 @@ class Order implements OrderInterface
     }
 
     /**
+     * @return array
+     */
+    public function getCartCost(): array
+    {
+        return $this->storage->getCartCost();
+    }
+
+    /**
      * @param bool $with_cart
      * @param bool $only_cost
      *
      * @return array
      */
-    public function getCost(bool $with_cart = true, bool $only_cost = false): array
+    public function getCost(bool $only_cost = false): array
     {
-        return $this->storage->getCost($with_cart, $only_cost);
+        return $this->storage->getCost($only_cost);
     }
 
     /**

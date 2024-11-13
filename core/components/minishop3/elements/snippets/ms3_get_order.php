@@ -2,6 +2,12 @@
 
 use MiniShop3\MiniShop3;
 use MiniShop3\Model\msOrder;
+use MiniShop3\Model\msOrderProduct;
+use MiniShop3\Model\msProduct;
+use MiniShop3\Model\msProductData;
+use MiniShop3\Model\msProductFile;
+use MiniShop3\Model\msProductOption;
+use MiniShop3\Model\msVendor;
 use ModxPro\PdoTools\Fetch;
 
 /** @var modX $modx */
@@ -21,12 +27,27 @@ if (empty($id) && !empty($_GET['msorder'])) {
 if (empty($id)) {
     return;
 }
-/** @var msOrder $order */
-if (!$order = $modx->getObject('msOrder', compact('id'))) {
+
+/** @var msOrder $msOrder */
+$msOrder = $modx->getObject(msOrder::class, ['id' => $id]);
+if (!$msOrder) {
     return $modx->lexicon('ms3_err_order_nf');
 }
-$canView = (!empty($_SESSION['ms3']['orders']) && in_array($id, $_SESSION['ms3']['orders'])) ||
-    $order->get('user_id') == $modx->user->id || $modx->user->hasSessionContext('mgr') || !empty($scriptProperties['id']);
+$customerId = null;
+if (!empty($_SESSION['ms3']) && !empty($_SESSION['ms3']['customer_token'])) {
+    $token = $_SESSION['ms3']['customer_token'];
+    $customer = $ms3->customer->getByToken($token);
+    if (!empty($customer)) {
+        $customerId = $customer->get('id');
+    }
+}
+
+$canView = (
+        !empty($_SESSION['ms3']['orders']) && in_array($id, $_SESSION['ms3']['orders']))
+    || $msOrder->get('user_id') == $modx->user->id
+    || !empty($customerId) && $msOrder->get('customer_id') == $customerId
+    || $modx->user->hasSessionContext('mgr')
+    || !empty($scriptProperties['id']);
 if (!$canView) {
     return '';
 }
@@ -39,33 +60,40 @@ $where = [
 // Include products properties
 $leftJoin = [
     'msProduct' => [
-        'class' => 'msProduct',
+        'class' => msProduct::class,
         'on' => 'msProduct.id = msOrderProduct.product_id',
     ],
     'Data' => [
-        'class' => 'msProductData',
+        'class' => msProductData::class,
         'on' => 'msProduct.id = Data.id',
     ],
     'Vendor' => [
-        'class' => 'msVendor',
-        'on' => 'Data.vendor = Vendor.id',
+        'class' => msVendor::class,
+        'on' => 'Data.vendor_id = Vendor.id',
     ],
 ];
 
 // Select columns
+//TODO Поля вендор сделать выборочными
 $select = [
     'msProduct' => !empty($includeContent)
-        ? $modx->getSelectColumns('msProduct', 'msProduct')
-        : $modx->getSelectColumns('msProduct', 'msProduct', '', ['content'], true),
+        ? $modx->getSelectColumns(msProduct::class, 'msProduct')
+        : $modx->getSelectColumns(msProduct::class, 'msProduct', '', ['content'], true),
     'Data' => $modx->getSelectColumns(
-            'msProductData',
-            'Data',
-            '',
-            ['id'],
-            true
-        ) . ',`Data`.`price` as `original_price`',
-    'Vendor' => $modx->getSelectColumns('msVendor', 'Vendor', 'vendor.', ['id'], true),
-    'OrderProduct' => $modx->getSelectColumns('msOrderProduct', 'msOrderProduct', '', ['id'], true) . ', `msOrderProduct`.`id` as `order_product_id`',
+        msProductData::class,
+        'Data',
+        '',
+        ['id'],
+        true
+    ) . ',`Data`.`price` as `original_price`',
+    'Vendor' => $modx->getSelectColumns(msVendor::class, 'Vendor', 'vendor.', ['id'], true),
+    'OrderProduct' => $modx->getSelectColumns(
+        msOrderProduct::class,
+        'msOrderProduct',
+        '',
+        ['id'],
+        true
+        ) . ', `msOrderProduct`.`id` as `order_product_id`',
 ];
 
 // Include products thumbnails
@@ -74,7 +102,7 @@ if (!empty($includeThumbs)) {
     if (!empty($thumbs[0])) {
         foreach ($thumbs as $thumb) {
             $leftJoin[$thumb] = [
-                'class' => 'msProductFile',
+                'class' => msProductFile::class,
                 'on' => "`{$thumb}`.product_id = msProduct.id AND `{$thumb}`.parent != 0 AND `{$thumb}`.path LIKE '%/{$thumb}/%'",
             ];
             $select[$thumb] = "`{$thumb}`.url as '{$thumb}'";
@@ -100,7 +128,7 @@ $pdoFetch->addTime('Conditions prepared');
 
 // Tables for joining
 $default = [
-    'class' => 'msOrderProduct',
+    'class' => msOrderProduct::class,
     'where' => $where,
     'leftJoin' => $leftJoin,
     'select' => $select,
@@ -117,6 +145,7 @@ $default = [
 // Merge all properties and run!
 $pdoFetch->setConfig(array_merge($default, $scriptProperties), true);
 $rows = $pdoFetch->run();
+
 
 $products = [];
 $cart_count = 0;
@@ -150,7 +179,7 @@ foreach ($rows as $product) {
     }
 
     // Add option values
-    $options = $modx->call('msProductOption', 'loadOptions', [$modx, $product['id']]);
+    $options = $modx->call(msProductOption::class, 'loadOptions', [$modx, $product['product_id']]);
     $products[] = array_merge($product, $options);
 
     // Count total
@@ -159,26 +188,26 @@ foreach ($rows as $product) {
 }
 
 $pls = array_merge($scriptProperties, [
-    'order' => $order->toArray(),
+    'order' => $msOrder->toArray(),
     'products' => $products,
-    'user' => ($tmp = $order->getOne('User'))
-        ? array_merge($tmp->getOne('Profile')->toArray(), $tmp->toArray())
-        : [],
-    'address' => ($tmp = $order->getOne('Address'))
+//    'user' => ($tmp = $msOrder->getOne('User'))
+//        ? array_merge($tmp->getOne('Profile')->toArray(), $tmp->toArray())
+//        : [],
+    'address' => ($tmp = $msOrder->getOne('Address'))
         ? $tmp->toArray()
         : [],
-    'delivery' => ($tmp = $order->getOne('Delivery'))
+    'delivery' => ($tmp = $msOrder->getOne('Delivery'))
         ? $tmp->toArray()
         : [],
-    'payment' => ($payment = $order->getOne('Payment'))
+    'payment' => ($payment = $msOrder->getOne('Payment'))
         ? $payment->toArray()
         : [],
     'total' => [
-        'cost' => $ms3->format->price($order->get('cost')),
-        'cart_cost' => $ms3->format->price($order->get('cart_cost')),
-        'delivery_cost' => $ms3->format->price($order->get('delivery_cost')),
-        'weight' => $ms3->format->weight($order->get('weight')),
-        'cart_weight' => $ms3->format->weight($order->get('weight')),
+        'cost' => $ms3->format->price($msOrder->get('cost')),
+        'cart_cost' => $ms3->format->price($msOrder->get('cart_cost')),
+        'delivery_cost' => $ms3->format->price($msOrder->get('delivery_cost')),
+        'weight' => $ms3->format->weight($msOrder->get('weight')),
+        'cart_weight' => $ms3->format->weight($msOrder->get('weight')),
         'cart_count' => $cart_count,
         'cart_discount' => $cart_discount_cost
     ],
@@ -188,16 +217,17 @@ $pls = array_merge($scriptProperties, [
 if ($payment and $class = $payment->get('class')) {
     $status = $modx->getOption('payStatus', $scriptProperties, '1');
     $status = array_map('trim', explode(',', $status));
-    if (in_array($order->get('status'), $status)) {
-        $ms3->loadCustomClasses('payment');
-        if (class_exists($class)) {
-            /** @var MiniShop3\Controllers\Payment\ $paymentController */
-            $paymentController = new $class($order);
-            if (method_exists($paymentController, 'getPaymentLink')) {
-                $link = $paymentController->getPaymentLink($order);
-                $pls['payment_link'] = $link;
-            }
-        }
+    if (in_array($msOrder->get('status'), $status)) {
+        //TODO  докрутить этот момент
+//        $ms3->loadCustomClasses('payment');
+//        if (class_exists($class)) {
+//            /** @var MiniShop3\Controllers\Payment\ $paymentController */
+//            $paymentController = new $class($msOrder);
+//            if (method_exists($paymentController, 'getPaymentLink')) {
+//                $link = $paymentController->getPaymentLink($msOrder);
+//                $pls['payment_link'] = $link;
+//            }
+//        }
     }
 }
 

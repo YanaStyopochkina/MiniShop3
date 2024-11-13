@@ -2,10 +2,6 @@
 
 /** @var \MODX\Revolution\modX $modx */
 
-use MiniShop3\Model\msOrder;
-use MODX\Revolution\modUser;
-use MODX\Revolution\modSystemEvent;
-
 switch ($modx->event->name) {
     case 'OnMODXInit':
         // Load extensions

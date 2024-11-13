@@ -137,6 +137,20 @@ class Customer
         return $msCustomer;
     }
 
+    public function getByToken($token)
+    {
+        if (empty($token)) {
+            return null;
+        }
+        $msCustomer = $this->modx->getObject(msCustomer::class, [
+            'token' => $token,
+        ]);
+        if (!$msCustomer) {
+            return null;
+        }
+        return $msCustomer;
+    }
+
     public function set($data = [])
     {
         if (empty($this->token)) {

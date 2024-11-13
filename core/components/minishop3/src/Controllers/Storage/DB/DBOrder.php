@@ -2,6 +2,7 @@
 
 namespace MiniShop3\Controllers\Storage\DB;
 
+use MiniShop3\Controllers\Order\OrderInterface;
 use MiniShop3\Model\msDelivery;
 use MiniShop3\Model\msOrder;
 use MiniShop3\Model\msPayment;
@@ -128,7 +129,6 @@ class DBOrder extends DBStorage
             return $this->error('ms3_err_token');
         }
         $this->initDraft();
-
         if (empty($this->order)) {
             $response = $this->get();
             if ($response['success']) {
@@ -170,7 +170,7 @@ class DBOrder extends DBStorage
             $cartCost = $cartCostResponse['data']['cost'];
         }
         //TODO пересмотреть модель доставки и ее методы
-        $costWithDelivery = $msDelivery->getCost($this, $cartCost);
+        $costWithDelivery = $msDelivery->getCost($this->ms3->order, $cartCost);
         $deliveryCost = $costWithDelivery - $cartCost;
 
         $response = $this->ms3->utils->invokeEvent('msOnGetDeliveryCost', [
@@ -238,7 +238,7 @@ class DBOrder extends DBStorage
             $cartCost = $cartCostResponse['data']['cost'];
         }
         //TODO пересмотреть модель оплаты  и ее методы
-        $costWithPayment = $msPayment->getCost($this, $cartCost);
+        $costWithPayment = $msPayment->getCost($this->ms3->order, $cartCost);
         $paymentCost = $costWithPayment - $cartCost;
 
         $response = $this->ms3->utils->invokeEvent('msOnGetPaymentCost', [
@@ -257,7 +257,7 @@ class DBOrder extends DBStorage
         ]);
     }
 
-    public function getCost($only_cost = false): array
+    public function getCost($only_cost = false)
     {
         $cartCostResponse = $this->getCartCost();
         $cartCost = 0;
@@ -638,7 +638,6 @@ class DBOrder extends DBStorage
             return $this->success('', ['msorder' => $msOrder->get('id')]);
         }
 
-        // TODO  редирект на конкретный ID страницы, заданный через системную настройку или сниппет.
         $response = $msPayment->send($msOrder);
         if (!$response['success']) {
             return $this->error($response['message']);

@@ -43,7 +43,7 @@ if ($response['success']) {
     $order['cost'] = $ms3->format->price($cost['cost']);
     $order['cart_cost'] = $ms3->format->price($cost['cart_cost']);
     $order['delivery_cost'] = $ms3->format->price($cost['delivery_cost']);
-    $order['discount_cost'] = $ms3->format->price($cost['discount_cost']);
+    $order['discount_cost'] = $ms3->format->price($cost['total_discount']);
 }
 
 // We need only active methods

@@ -382,7 +382,7 @@ class Customer
      *
      * @return integer $id
      */
-    public function getId()
+    public function getId(): int
     {
         $msCustomer = null;
 
@@ -429,7 +429,7 @@ class Customer
         return 0;
     }
 
-    public function create(array $customerData)
+    public function create(array $customerData): msCustomer|null
     {
         //TODO  event msOnBeforeCreateCustomer
         $msCustomer = $this->modx->newObject(msCustomer::class, $customerData);
@@ -451,11 +451,13 @@ class Customer
             return false;
         }
 
-        // TODO логика проверки существования слишком простая.  Подумать
+        // TODO вынести в системную настройку список полей для формирования имени и хэша, по примеру ключа опции
+        $customerAddressData['name'] = implode(' ', [$customerAddressData['street'], $customerAddressData['building']]);
+        $customerAddressData['hash'] = md5($customerAddressData['name']);
+
         // TODO  сделать события?
         $isExists = $this->modx->getCount(msCustomerAddress::class, [
-            'street' => $customerAddressData['street'],
-            'building' => $customerAddressData['building'],
+            'hash' => $customerAddressData['hash'],
         ]);
         if (!empty($isExists)) {
             return false;
@@ -465,6 +467,19 @@ class Customer
         $msCustomerAddress->save();
 
         return true;
+    }
+
+    public function getAddresses(int $customer_id = 0): bool|array
+    {
+        $q = $this->modx->newQuery(msCustomerAddress::class);
+        $q->where([
+            'customer_id' => $customer_id,
+        ]);
+        $fields = $this->modx->getSelectColumns(msCustomerAddress::class, 'msCustomerAddress');
+        $q->select($fields);
+        $q->prepare();
+        $q->stmt->execute();
+        return $q->stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     /**

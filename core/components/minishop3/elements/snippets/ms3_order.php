@@ -6,6 +6,11 @@ use MiniShop3\Model\msDelivery;
 use MiniShop3\Model\msPayment;
 use MiniShop3\Model\msDeliveryMember;
 
+// Do not show order form when displaying details of existing order
+if (!empty($_GET['msorder'])) {
+    return '';
+}
+
 /** @var modX $modx */
 /** @var array $scriptProperties */
 /** @var MiniShop3 $ms3 */
@@ -24,17 +29,16 @@ $pdoFetch->addTime('pdoTools loaded.');
 
 $tpl = $modx->getOption('tpl', $scriptProperties, 'tpl.msOrder');
 $return = $modx->getOption('return', $scriptProperties, 'tpl');
+$includeDeliveryFields = $modx->getOption('includeDeliveryFields', $scriptProperties, 'id');
+$includeDeliveryKeys = array_map('trim', explode(',', $includeDeliveryFields));
+$includeDeliveryKeys = array_unique(array_merge($includeDeliveryKeys, ['id']));
+$includeCustomerAddresses = $modx->getOption('includeCustomerAddresses', $scriptProperties, true);
 
 $ms3->order->initialize($token);
 $response = $ms3->order->get();
 $order = [];
 if ($response['success']) {
     $order = $response['data']['order'];
-}
-
-// Do not show order form when displaying details of existing order
-if (!empty($_GET['msorder'])) {
-    return '';
 }
 
 $response = $ms3->order->getCost();
@@ -65,9 +69,6 @@ $leftJoin = [
 
 // Select columns
 $select = [];
-$includeDeliveryFields = $modx->getOption('includeDeliveryFields', $scriptProperties, 'id');
-$includeDeliveryKeys = array_map('trim', explode(',', $includeDeliveryFields));
-$includeDeliveryKeys = array_unique(array_merge($includeDeliveryKeys, ['id']));
 
 if ($includeDeliveryKeys[0] === '*') {
     $select['msDelivery'] = $modx->getSelectColumns(msDelivery::class, '`msDelivery`', 'delivery_');
@@ -154,6 +155,11 @@ foreach ($rows as $row) {
     }
 }
 
+$addresses = [];
+if (!empty($includeCustomerAddresses) && !empty($order['customer_id'])) {
+    $addresses = $ms3->customer->getAddresses($order['customer_id']);
+}
+
 $form = [];
 //TODO здесь применить еще модель msCustomer
 // Get user data
@@ -216,6 +222,9 @@ $outputData = [
     'payments' => $payments,
 //    'errors' => $errors,
 ];
+if (!empty($includeCustomerAddresses)) {
+    $outputData['addresses'] = $addresses;
+}
 
 if ($return === 'data') {
     return $outputData;

@@ -16,6 +16,8 @@ class msCustomerAddress extends \MiniShop3\Model\msCustomerAddress
         'fields' =>
             [
                 'customer_id' => 0,
+                'hash' => null,
+                'name' => null,
                 'country' => null,
                 'index' => null,
                 'region' => null,
@@ -27,6 +29,9 @@ class msCustomerAddress extends \MiniShop3\Model\msCustomerAddress
                 'floor' => null,
                 'room' => null,
                 'comment' => null,
+                'createdon' => null,
+                'updatedon' => null,
+                'active' => 1,
             ],
         'fieldMeta' =>
             [
@@ -38,6 +43,20 @@ class msCustomerAddress extends \MiniShop3\Model\msCustomerAddress
                         'attributes' => 'unsigned',
                         'null' => false,
                         'default' => 0,
+                    ],
+                'hash' =>
+                    [
+                        'dbtype' => 'varchar',
+                        'precision' => '32',
+                        'phptype' => 'string',
+                        'null' => true,
+                    ],
+                'name' =>
+                    [
+                        'dbtype' => 'varchar',
+                        'precision' => '100',
+                        'phptype' => 'string',
+                        'null' => true,
                     ],
                 'country' =>
                     [
@@ -115,6 +134,26 @@ class msCustomerAddress extends \MiniShop3\Model\msCustomerAddress
                         'phptype' => 'string',
                         'null' => true,
                     ],
+                'createdon' =>
+                    [
+                        'dbtype' => 'datetime',
+                        'phptype' => 'datetime',
+                        'null' => true,
+                    ],
+                'updatedon' =>
+                    [
+                        'dbtype' => 'datetime',
+                        'phptype' => 'datetime',
+                        'null' => true,
+                    ],
+                'active' =>
+                    [
+                        'dbtype' => 'tinyint',
+                        'precision' => '1',
+                        'phptype' => 'integer',
+                        'null' => true,
+                        'default' => 1,
+                    ],
             ],
         'indexes' =>
             [
@@ -127,6 +166,22 @@ class msCustomerAddress extends \MiniShop3\Model\msCustomerAddress
                         'columns' =>
                             [
                                 'customer_id' =>
+                                    [
+                                        'length' => '',
+                                        'collation' => 'A',
+                                        'null' => false,
+                                    ],
+                            ],
+                    ],
+                'hash' =>
+                    [
+                        'alias' => 'hash',
+                        'primary' => false,
+                        'unique' => false,
+                        'type' => 'BTREE',
+                        'columns' =>
+                            [
+                                'hash' =>
                                     [
                                         'length' => '',
                                         'collation' => 'A',

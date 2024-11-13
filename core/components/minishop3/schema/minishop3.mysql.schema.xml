@@ -440,6 +440,8 @@
 
     <object class="msCustomerAddress" table="ms3_customer_addresses" extends="xPDO\Om\xPDOSimpleObject">
         <field key="customer_id" dbtype="int" precision="10" attributes="unsigned" phptype="integer" null="true" default="0"/>
+        <field key="hash" dbtype="varchar" precision="32" phptype="string" null="true"/>
+        <field key="name" dbtype="varchar" precision="100" phptype="string" null="true"/>
         <field key="country" dbtype="varchar" precision="100" phptype="string" null="true"/>
         <field key="index" dbtype="varchar" precision="50" phptype="string" null="true"/>
         <field key="region" dbtype="varchar" precision="100" phptype="string" null="true"/>
@@ -451,6 +453,17 @@
         <field key="floor" dbtype="varchar" precision="10" phptype="string" null="true"/>
         <field key="room" dbtype="varchar" precision="10" phptype="string" null="true"/>
         <field key="comment" dbtype="text" phptype="string" null="true"/>
+        <field key="createdon" dbtype="datetime" phptype="datetime" null="true" />
+        <field key="updatedon" dbtype="datetime" phptype="datetime" null="true" />
+        <field key="active" dbtype="tinyint" precision="1" phptype="integer" null="true" default="1"/>
+
+        <index alias="customer_id" name="customer_id" primary="false" unique="false" type="BTREE">
+            <column key="customer_id" length="" collation="A" null="false"/>
+        </index>
+
+        <index alias="hash" name="hash" primary="false" unique="false" type="BTREE">
+            <column key="hash" length="" collation="A" null="false"/>
+        </index>
 
         <aggregate alias="Customer" class="MiniShop3\Model\msCustomer" local="customer_id" foreign="id" owner="foreign" cardinality="one"/>
     </object>

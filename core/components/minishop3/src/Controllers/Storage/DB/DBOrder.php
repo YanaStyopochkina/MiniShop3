@@ -2,7 +2,7 @@
 
 namespace MiniShop3\Controllers\Storage\DB;
 
-use MiniShop3\Controllers\Order\OrderInterface;
+use MiniShop3\Model\msCustomerAddress;
 use MiniShop3\Model\msDelivery;
 use MiniShop3\Model\msOrder;
 use MiniShop3\Model\msPayment;
@@ -317,6 +317,10 @@ class DBOrder extends DBStorage
         }
         $value = $response['data']['value'];
 
+        if ($key === 'address_hash') {
+            return $this->setCustomerAddress($value);
+        }
+
         if (empty($value)) {
             $this->remove($key);
             return $this->success('', [$key => null]);
@@ -432,7 +436,10 @@ class DBOrder extends DBStorage
                 $this->order = $response['data']['order'];
             }
         }
-        if ($exists = array_key_exists($key, $this->order)) {
+
+        $exists = array_key_exists($key, $this->order)
+            || array_key_exists('address_' . $key, $this->order);
+        if ($exists) {
             $response = $this->ms3->utils->invokeEvent('msOnBeforeRemoveFromOrder', [
                 'key' => $key,
                 'controller' => $this,
@@ -563,7 +570,7 @@ class DBOrder extends DBStorage
             return $this->error($response['message']);
         }
         $deliveryCost = $response['data']['delivery_cost'];
-        $cost =  $response['data']['cart_cost'];
+        $cost = $response['data']['cart_cost'];
         $num = $this->getNewOrderNum();
         $this->draft->fromArray([
             'customer_id' => $customer_id,
@@ -688,6 +695,82 @@ class DBOrder extends DBStorage
         // TODO event on clean
 
         return $this->success('ms3_order_clean_success');
+    }
+
+    public function setCustomerAddress($addressHash)
+    {
+        if (empty($this->token)) {
+            return $this->error('');
+        }
+        if (empty($addressHash)) {
+            return $this->cleanCustomerAddress();
+        }
+
+        if (empty($this->order)) {
+            $response = $this->get();
+            if ($response['success']) {
+                $this->order = $response['data']['order'];
+            }
+        }
+
+        if (empty($this->order['customer_id'])) {
+            return $this->error('');
+        }
+
+        $address = $this->modx->getObject(msCustomerAddress::class, [
+            'customer_id' => $this->order['customer_id'],
+            'hash' => $addressHash,
+        ]);
+        if (!$address) {
+            return $this->error('');
+        }
+
+        $fields = $this->getCustomerAddressFields([
+            'id', 'customer_id', 'hash', 'name', 'comment',
+            'createdon', 'updatedon', 'active'
+        ]);
+
+        foreach ($fields as $key => $value) {
+            if (in_array('address_' . $key, array_keys($this->order))) {
+                $this->add($key, $address->get($key));
+            }
+        }
+
+        $properties = $this->order['properties'];
+        unset($properties['save_address']);
+        $properties['address_hash'] = $addressHash;
+        $this->add('properties', $properties);
+
+        return $this->success('');
+    }
+
+    public function cleanCustomerAddress(): array
+    {
+        if (empty($this->token)) {
+            return $this->error('');
+        }
+        if (empty($this->order)) {
+            $response = $this->get();
+            if ($response['success']) {
+                $this->order = $response['data']['order'];
+            }
+        }
+
+        $fields = $this->getCustomerAddressFields([
+            'id', 'customer_id', 'hash', 'name', 'comment',
+            'createdon', 'updatedon', 'active'
+        ]);
+        foreach ($fields as $key => $value) {
+            if (in_array('address_' . $key, array_keys($this->order)) && !empty($this->order['address_' . $key])) {
+                $this->add($key);
+            }
+        }
+
+        $properties = $this->order['properties'];
+        unset($properties['address_hash']);
+        $this->add('properties', $properties);
+
+        return $this->success('');
     }
 
     /**
@@ -859,5 +942,17 @@ class DBOrder extends DBStorage
         $count = intval($count) + 1;
 
         return sprintf('%s%s%d', $cur, $separator, $count);
+    }
+
+    private function getCustomerAddressFields(array $exclude): array
+    {
+        $fields = $this->modx->getFields(msCustomerAddress::class);
+        if (!empty($exclude)) {
+            foreach ($exclude as $key) {
+                unset($fields[$key]);
+            }
+        }
+
+        return $fields;
     }
 }

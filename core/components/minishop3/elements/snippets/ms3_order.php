@@ -161,6 +161,9 @@ if (!empty($includeCustomerAddresses) && !empty($order['customer_id'])) {
 }
 
 $form = [];
+if (!empty($order['properties']['address_hash'])) {
+    $form['address_hash'] = $order['properties']['address_hash'];
+}
 //TODO здесь применить еще модель msCustomer
 // Get user data
 $profile = [];
@@ -222,6 +225,7 @@ $outputData = [
     'payments' => $payments,
 //    'errors' => $errors,
 ];
+
 if (!empty($includeCustomerAddresses)) {
     $outputData['addresses'] = $addresses;
 }

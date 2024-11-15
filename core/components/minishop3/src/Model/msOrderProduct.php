@@ -16,6 +16,7 @@ use xPDO\Om\xPDOSimpleObject;
  * @property float $cost
  * @property array $options
  * @property array $properties
+ * @property string $product_key
  *
  * @package MiniShop3\Model
  */

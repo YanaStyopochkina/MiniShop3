@@ -7,6 +7,7 @@ use xPDO\Om\xPDOSimpleObject;
 /**
  * Class msVendor
  *
+ * @property integer $position
  * @property string $name
  * @property integer $resource_id
  * @property string $country

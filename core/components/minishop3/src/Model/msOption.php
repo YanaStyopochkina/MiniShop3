@@ -14,7 +14,7 @@ use xPDO\xPDO;
  * @property string $caption
  * @property string $description
  * @property string $measure_unit
- * @property integer $category
+ * @property integer $modcategory_id
  * @property string $type
  * @property array $properties
  *

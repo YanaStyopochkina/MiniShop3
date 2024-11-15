@@ -8,7 +8,6 @@ use xPDO\Om\xPDOSimpleObject;
  * Class msOrderAddress
  *
  * @property integer $order_id
- * @property integer $user_id
  * @property string $createdon
  * @property string $updatedon
  * @property string $first_name

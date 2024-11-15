@@ -25,7 +25,7 @@ use xPDO\xPDO;
  * @property array $tags
  * @property array $color
  * @property array $size
- * @property integer $source
+ * @property integer $source_id
  *
  * @property msProductOption[] $Options
  * @property msProductFile[] $Files

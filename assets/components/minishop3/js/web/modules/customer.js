@@ -35,5 +35,10 @@ ms3.customer = {
   async add (formData) {
     formData.append('ms3_action', 'customer/add')
     return await ms3.request.send(formData)
+  },
+
+  async changeAddress (formData) {
+    formData.append('ms3_action', 'customer/changeAddress')
+    return await ms3.request.send(formData)
   }
 }

@@ -220,6 +220,10 @@ class MiniShop3
                 $this->customer->initialize($token);
                 $response = $this->customer->set($data);
                 break;
+            case 'customer/changeAddress':
+                $this->order->initialize($token);
+                $response = $this->order->setCustomerAddress(@$data['value']);
+                break;
             case 'cart/add':
                 $this->cart->initialize($ctx, $token);
                 $response = $this->cart->add(@$data['id'], @$data['count'], @$data['options']);

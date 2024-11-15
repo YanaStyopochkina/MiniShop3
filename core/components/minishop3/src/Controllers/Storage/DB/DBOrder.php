@@ -697,7 +697,7 @@ class DBOrder extends DBStorage
         return $this->success('ms3_order_clean_success');
     }
 
-    public function setCustomerAddress($addressHash)
+    public function setCustomerAddress(string $addressHash = null): array
     {
         if (empty($this->token)) {
             return $this->error('');
@@ -717,11 +717,11 @@ class DBOrder extends DBStorage
             return $this->error('');
         }
 
-        $address = $this->modx->getObject(msCustomerAddress::class, [
+        $msCustomerAddress = $this->modx->getObject(msCustomerAddress::class, [
             'customer_id' => $this->order['customer_id'],
             'hash' => $addressHash,
         ]);
-        if (!$address) {
+        if (!$msCustomerAddress) {
             return $this->error('');
         }
 
@@ -730,9 +730,12 @@ class DBOrder extends DBStorage
             'createdon', 'updatedon', 'active'
         ]);
 
+        $returnData = [];
+
         foreach ($fields as $key => $value) {
             if (in_array('address_' . $key, array_keys($this->order))) {
-                $this->add($key, $address->get($key));
+                $this->add($key, $msCustomerAddress->get($key));
+                $returnData[$key] = $msCustomerAddress->get($key);
             }
         }
 
@@ -740,8 +743,7 @@ class DBOrder extends DBStorage
         unset($properties['save_address']);
         $properties['address_hash'] = $addressHash;
         $this->add('properties', $properties);
-
-        return $this->success('');
+        return $this->success('', $returnData);
     }
 
     public function cleanCustomerAddress(): array

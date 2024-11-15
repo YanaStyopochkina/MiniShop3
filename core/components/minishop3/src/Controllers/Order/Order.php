@@ -79,6 +79,16 @@ class Order implements OrderInterface
     }
 
     /**
+     * @param string $value
+     *
+     * @return array
+     */
+    public function setCustomerAddress(string $value = null): array
+    {
+        return $this->storage->setCustomerAddress($value);
+    }
+
+    /**
      * @param string $key
      * @param string $value
      *

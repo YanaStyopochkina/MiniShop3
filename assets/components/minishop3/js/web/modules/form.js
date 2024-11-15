@@ -8,6 +8,7 @@ ms3.form = {
       event.preventDefault()
       const form = event.target
       const formData = new FormData(form)
+      // TODO правило актуально только для формы корзины.
       if (ms3Config.render) {
         formData.append('render', JSON.stringify(ms3Config.render))
       }

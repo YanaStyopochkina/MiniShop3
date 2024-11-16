@@ -8,6 +8,7 @@ use MiniShop3\Model\msOrder;
 use MiniShop3\Model\msPayment;
 use Rakit\Validation\Validator;
 use MiniShop3\Controllers\Order\OrderStatus;
+use MiniShop3\Controllers\Order\OrderLog;
 
 class DBOrder extends DBStorage
 {
@@ -17,6 +18,7 @@ class DBOrder extends DBStorage
     protected $validationRules = [];
     protected $validationMessages = [];
     protected $deliverValidationRules;
+    protected $log;
 
     /**
      * @param string $token
@@ -36,6 +38,8 @@ class DBOrder extends DBStorage
         if (!empty($_SESSION['ms3']['validation']['messages'])) {
             $this->validationMessages = $_SESSION['ms3']['validation']['messages'];
         }
+
+        $this->log = new OrderLog($this->ms3);
         return true;
     }
 

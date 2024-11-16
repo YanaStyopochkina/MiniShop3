@@ -31,11 +31,11 @@ class OrderLog
      *
      * @return boolean
      */
-    public function process($order_id, $entry, $action = 'status')
+    public function add(int $order_id, mixed $entry, string $action = 'status'): bool
     {
         /** @var msOrder $order */
-        $order = $this->modx->getObject(msOrder::class, ['id' => $order_id]);
-        if (!$order) {
+        $msOrder = $this->modx->getObject(msOrder::class, ['id' => $order_id]);
+        if (!$msOrder) {
             return false;
         }
 
@@ -43,10 +43,13 @@ class OrderLog
             $this->modx->getRequest();
         }
 
+        //TODO белый список разрешенных действий с управлением из админки
+        //TODO автором может быть не user, а customer, Предусмотреть его ID
+
         $user_id = ($action === 'status' && $entry == 1) || !$this->modx->user->id
-            ? $order->get('user_id')
+            ? $msOrder->get('user_id')
             : $this->modx->user->id;
-        $log = $this->modx->newObject(msOrderLog::class, [
+        $msOrderLog = $this->modx->newObject(msOrderLog::class, [
             'order_id' => $order_id,
             'user_id' => $user_id,
             'timestamp' => time(),
@@ -55,6 +58,6 @@ class OrderLog
             'ip' => $this->modx->request->getClientIp(),
         ]);
 
-        return $log->save();
+        return $msOrderLog->save();
     }
 }

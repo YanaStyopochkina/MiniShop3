@@ -46,7 +46,7 @@ class GetLog extends GetListProcessor
         $sortClassKey = $this->getSortClassKey();
         $sortKey = $this->modx->getSelectColumns(
             $sortClassKey,
-            $this->getProperty('sortAlias', $sortClassKey),
+            $this->getProperty('sortAlias', 'msOrderLog'),
             '',
             [$this->getProperty('sort')]
         );
@@ -59,7 +59,7 @@ class GetLog extends GetListProcessor
         }
 
         if ($c->prepare() && $c->stmt->execute()) {
-            $data['results'] = $c->stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $data['results'] = $c->stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
         }
 
         return $data;

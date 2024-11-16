@@ -3,11 +3,11 @@ ms3.grid.Logs = function (config) {
     if (!config.id) {
         config.id = 'ms3-grid-order-logs';
     }
+    config.disableContextMenuAction = true;
     Ext.applyIf(config, {
         baseParams: {
             action: 'MiniShop3\\Processors\\Order\\GetLog',
             order_id: config.order_id,
-            type: 'status'
         },
         cls: 'ms3-grid',
         multi_select: false,

@@ -564,9 +564,13 @@ class DBOrder extends DBStorage
 
 
         //TODO проверить, регистрируем ли пользователя?
-        $user_id = 1;
-        if (empty($user_id) || !is_int($user_id)) {
-            return $this->error(is_string($user_id) ? $user_id : 'ms3_err_user_nf');
+        $registerUser = $this->modx->getOption('ms3_order_register_user_on_submit', null, false);
+        $user_id = 0;
+        if ($registerUser) {
+            $user_id = $this->ms3->order->getUserId();
+            if (empty($user_id)) {
+                return $this->error('ms3_err_user_nf');
+            }
         }
 
         $response = $this->getCost();

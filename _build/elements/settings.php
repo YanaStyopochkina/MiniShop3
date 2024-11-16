@@ -221,6 +221,11 @@ return [
         'xtype' => 'numberfield',
         'area' => 'ms3_order',
     ],
+    'ms3_order_register_user_on_submit' => [
+        'value' => false,
+        'xtype' => 'combo-boolean',
+        'area' => 'ms3_order',
+    ],
     'ms3_date_format' => [
         'value' => 'd.m.y H:M',
         'xtype' => 'textfield',

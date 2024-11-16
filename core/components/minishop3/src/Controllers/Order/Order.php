@@ -7,6 +7,9 @@ use MiniShop3\Model\msDelivery;
 use MiniShop3\Model\msDeliveryMember;
 use MiniShop3\Model\msOrder;
 use MiniShop3\Model\msPayment;
+use MODX\Revolution\modUser;
+use MODX\Revolution\modUserProfile;
+use MODX\Revolution\modUserSetting;
 use MODX\Revolution\modX;
 use MiniShop3\Controllers\Storage\DB\DBOrder;
 
@@ -170,6 +173,145 @@ class Order implements OrderInterface
     public function getNewOrderNum(): string
     {
         return $this->storage->getNewOrderNum();
+    }
+
+    /**
+     * Returns id for current user. If user is not exists, registers him and returns id.
+     *
+     * @return integer $id
+     */
+    public function getUserId(): int
+    {
+        $modUser = null;
+
+        $response = $this->ms3->utils->invokeEvent('msOnBeforeGetOrderUser', [
+            'controller' => $this->ms3->order,
+            'user' => $modUser,
+        ]);
+        if (!$response['success']) {
+            return $response['message'];
+        }
+
+        if (!$modUser) {
+            $orderResponse = $this->ms3->order->get();
+            if (!$orderResponse['success']) {
+                return 0;
+            }
+            $order = $orderResponse['data']['order'];
+            $email = $order['address_email'] ?? '';
+            $firstName = $order['address_first_name'] ?? '';
+            $lastName = $order['address_last_name'] ?? '';
+            $fullName = implode(' ', [$firstName, $lastName]);
+            $phone = $order['address_phone'] ?? '';
+            // TODO подумать как сделать формирование данных более гибким, настраиваемым. Хардкор - плохо
+            if (empty($fullName)) {
+                $fullName = $email
+                    ? substr($email, 0, strpos($email, '@'))
+                    : ($phone
+                        ? preg_replace('#\D#', '', $phone)
+                        : uniqid('user_', false));
+            }
+            $modResource = $this->modx->newObject(\modResource::class);
+            $userName = $modResource->cleanAlias($fullName);
+            if (empty($email)) {
+                $email = $userName . '@' . $this->modx->getOption('http_host');
+            }
+
+            if ($this->modx->user->isAuthenticated()) {
+                $profile = $this->modx->user->Profile;
+                if (!$profile->get('email')) {
+                    $profile->set('email', $email);
+                }
+                if (!$profile->get('mobilephone')) {
+                    $profile->set('mobilephone', $phone);
+                }
+                $profile->save();
+                $modUser = $this->modx->user;
+            } else {
+                $data = [
+                    'email' => $email,
+                    'full_name' => $fullName,
+                    'user_name' => $userName,
+                    'phone' => $phone,
+                ];
+                $modUser = $this->checkUserExists($data);
+                if (!$modUser) {
+                    $modUser = $this->createUser($data);
+                }
+            }
+        }
+
+        $response = $this->ms3->utils->invokeEvent('msOnGetOrderUser', [
+            'controller' => $this->ms3->order,
+            'user' => $modUser,
+        ]);
+        if (!$response['success']) {
+            return $response['message'];
+        }
+
+        return $modUser instanceof modUser
+            ? $modUser->get('id')
+            : 0;
+    }
+
+    protected function checkUserExists($data)
+    {
+        $c = $this->modx->newQuery(modUser::class);
+        $c->leftJoin(modUserProfile::class, 'Profile');
+        $filter = ['username' => $data['email'], 'OR:Profile.email:=' => $data['email']];
+        if (!empty($phone)) {
+            $filter['OR:Profile.mobilephone:='] = $data['phone'];
+        }
+        $c->where($filter);
+        $c->select('modUser.id');
+        return $this->modx->getObject(modUser::class, $c);
+    }
+
+    protected function createUser(array $data): modUser|null
+    {
+        $modUser = $this->modx->newObject(
+            modUser::class,
+            ['username' => $data['user_name'], 'password' => md5(rand())]
+        );
+        $profile = $this->modx->newObject(modUserProfile::class, [
+            'email' => $data['email'],
+            'fullname' => $data['full_name'],
+            'mobilephone' => $data['phone'],
+        ]);
+        $modUser->addOne($profile);
+        /** @var modUserSetting $setting */
+        $setting = $this->modx->newObject(modUserSetting::class);
+        $setting->fromArray([
+            'key' => 'cultureKey',
+            'area' => 'language',
+            'value' => $this->modx->getOption('cultureKey', null, 'en', true),
+        ], '', true);
+        $modUser->addMany($setting);
+        if (!$modUser->save()) {
+            return null;
+        }
+
+        $groups = $this->modx->getOption('ms3_order_user_groups', null, false);
+        if (!$groups) {
+            return $modUser;
+        }
+
+        $groupRoles = array_map('trim', explode(',', $groups));
+        foreach ($groupRoles as $groupRole) {
+            $groupRole = explode(':', $groupRole);
+            if (count($groupRole) > 1 && !empty($groupRole[1])) {
+                if (is_numeric($groupRole[1])) {
+                    $roleId = (int)$groupRole[1];
+                } else {
+                    $roleId = $groupRole[1];
+                }
+            } else {
+                $roleId = null;
+            }
+            $modUser->joinGroup($groupRole[0], $roleId);
+        }
+
+        return $modUser;
     }
 
     /**

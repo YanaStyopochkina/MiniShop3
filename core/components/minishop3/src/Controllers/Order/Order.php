@@ -211,6 +211,7 @@ class Order implements OrderInterface
                         ? preg_replace('#\D#', '', $phone)
                         : uniqid('user_', false));
             }
+            //TODO username должен быть уникальным, имя не годится
             $modResource = $this->modx->newObject(\modResource::class);
             $userName = $modResource->cleanAlias($fullName);
             if (empty($email)) {

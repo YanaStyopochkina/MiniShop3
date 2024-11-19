@@ -271,7 +271,7 @@ return [
 //        'area' => 'ms3_frontend',
 //    ],
     'ms3_status_draft' => [
-        'value' => 0,
+        'value' => 1,
         'xtype' => 'numberfield',
         'area' => 'ms3_statuses',
     ],

@@ -31,7 +31,7 @@ class OrderLog
      *
      * @return boolean
      */
-    public function add(int $order_id, mixed $entry, string $action = 'status'): bool
+    public function add(int $order_id, mixed $entry, string $action): bool
     {
         /** @var msOrder $order */
         $msOrder = $this->modx->getObject(msOrder::class, ['id' => $order_id]);

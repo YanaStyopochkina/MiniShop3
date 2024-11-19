@@ -22,6 +22,8 @@ class OrderStatus
      * @var OrderLog
      */
     private $orderLogController;
+    private $useScheduler;
+    private $schedulerTask;
 
     public function __construct(MiniShop3 $ms3)
     {
@@ -40,18 +42,16 @@ class OrderStatus
      *
      * @return boolean|string
      */
-    public function change($order_id, $status_id)
+    public function change(int $order_id, int $status_id): bool|string
     {
         /** @var msOrder $order */
         $msOrder = $this->modx->getObject(msOrder::class, ['id' => $order_id]);
         if (!$msOrder) {
             return $this->modx->lexicon('ms3_err_order_nf');
         }
-
         $ctx = $msOrder->get('context');
         $this->modx->switchContext($ctx);
         $this->ms3->initialize($ctx);
-
 
         /** @var msOrderStatus $status */
         $status = $this->modx->getObject(msOrderStatus::class, ['id' => $status_id, 'active' => 1]);
@@ -80,7 +80,8 @@ class OrderStatus
 
         $eventParams = [
             'msOrder' => $msOrder,
-            'status_id' => $msOrder->get('status_id'),
+            'old_status' => $old_status->get('id'),
+            'status' => $status_id,
         ];
         $response = $this->ms3->utils->invokeEvent('msOnBeforeChangeOrderStatus', $eventParams);
         if (!$response['success']) {
@@ -90,41 +91,103 @@ class OrderStatus
         $msOrder->set('status_id', $status_id);
 
         if ($msOrder->save()) {
-//            $this->orderLogController->process($msOrder->get('id'), 'status', $status_id);
-//            $response = $this->ms3->utils->invokeEvent('msOnChangeOrderStatus', [
-//                'msOrder' => $msOrder,
-//                'status_id' => $status_id,
-//            ]);
-//            if (!$response['success']) {
-//                return $response['message'];
+            $this->orderLogController->add($msOrder->get('id'), $status_id, 'status');
+            $response = $this->ms3->utils->invokeEvent('msOnChangeOrderStatus', [
+                'msOrder' => $msOrder,
+                'old_status' => $old_status->get('id'),
+                'status' => $status_id,
+            ]);
+            if (!$response['success']) {
+                return $response['message'];
+            }
+            $pls = $this->preparePls($msOrder);
+            //TODO  create Scheduler instance for MODX3
+            $this->useScheduler = $this->modx->getOption('ms3_use_scheduler', null, false);
+            $this->schedulerTask = null;
+//            if ($this->useScheduler) {
+//                $this->setSchedulerTask();
 //            }
-//            $lang = $this->modx->getOption('cultureKey', null, 'en', true);
-//            $tmp = $this->modx->getObject(
-//                modUserSetting::class,
-//                ['key' => 'cultureKey', 'user' => $msOrder->get('user_id')]
-//            );
-//            if ($tmp) {
-//                $lang = $tmp->get('value');
-//            } else {
-//                $tmp = $this->modx->getObject(
-//                    modContextSetting::class,
-//                    ['key' => 'cultureKey', 'context_key' => $msOrder->get('context')]
-//                );
-//                if ($tmp) {
-//                    $lang = $tmp->get('value');
-//                }
-//            }
-//
-//            $this->modx->setOption('cultureKey', $lang);
-//            $this->modx->lexicon->load($lang . ':minishop3:default', $lang . ':minishop3:cart');
-            //$this->sendEmails($msOrder, $status);
+
+            //TODO  добавить другие контроллеры связи SMS, telegram
+            if ($status->get('email_manager')) {
+                $this->createEmailManager($pls, $status);
+            }
+
+            if ($status->get('email_user')) {
+                $this->createEmailCustomer($pls, $status);
+            }
         }
 
         return true;
     }
 
-    private function sendEmails($msOrder, $status)
+    public function createEmailManager($pls, $status)
     {
+        $subject = $this->ms3->pdoTools->getChunk('@INLINE ' . $status->get('subject_manager'), $pls);
+        $tpl = '';
+        $chunk = $this->modx->getObject(modChunk::class, ['id' => $status->get('body_manager')]);
+        if ($chunk) {
+            $tpl = $chunk->get('name');
+        }
+        $body = $this->modx->runSnippet('msGetOrder', array_merge($pls, ['tpl' => $tpl]));
+        $emails = array_map(
+            'trim',
+            explode(
+                ',',
+                $this->modx->getOption('ms3_email_manager', null, $this->modx->getOption('emailsender'))
+            )
+        );
+        if (!empty($subject)) {
+            foreach ($emails as $email) {
+                if (preg_match('#.*?@#', $email)) {
+                    if ($this->useScheduler && $this->schedulerTask instanceof \sTask) {
+                        $this->schedulerTask->schedule('+1 second', [
+                            'email' => $email,
+                            'subject' => $subject,
+                            'body' => $body
+                        ]);
+                    } else {
+                        $this->ms3->utils->sendEmail($email, $subject, $body);
+                    }
+                }
+            }
+        }
+    }
+
+    public function createEmailCustomer(array $pls, msOrderStatus $status): void
+    {
+        $pls['user_id'] = 1;
+        $profile = $this->modx->getObject(modUserProfile::class, ['internalKey' => $pls['user_id']]);
+        //TODO  сюда добавить email из msCustomer
+        if ($profile) {
+            $subject = $this->ms3->pdoTools->getChunk('@INLINE ' . $status->get('subject_user'), $pls);
+            $tpl = '';
+            if ($chunk = $this->modx->getObject(modChunk::class, ['id' => $status->get('body_user')])) {
+                $tpl = $chunk->get('name');
+            }
+            $body = $this->modx->runSnippet('msGetOrder', array_merge($pls, ['tpl' => $tpl]));
+            $email = $profile->get('email');
+            if (!empty($subject) && preg_match('#.*?@#', $email)) {
+                if ($this->useScheduler && $this->schedulerTask instanceof \sTask) {
+                    $this->schedulerTask->schedule('+1 second', [
+                        'email' => $email,
+                        'subject' => $subject,
+                        'body' => $body
+                    ]);
+                } else {
+                    $this->ms3->utils->sendEmail($email, $subject, $body);
+                }
+            }
+        }
+    }
+
+    protected function preparePls($msOrder)
+    {
+        $lang = $this->getLang($msOrder);
+
+        $this->modx->setOption('cultureKey', $lang);
+        $this->modx->lexicon->load($lang . ':minishop3:default', $lang . ':minishop3:cart');
+
         $tv_list = $this->modx->getOption('ms3_order_tv_list', null, '');
         $pls = $msOrder->toArray();
         $pls['cost'] = $this->ms3->format->price($pls['cost']);
@@ -135,58 +198,92 @@ class OrderStatus
         if (!empty($tv_list)) {
             $pls['includeTVs'] = $tv_list;
         }
-        $payment = $msOrder->getOne('Payment');
-        if ($payment) {
-            $class = $payment->get('class');
-            if (!empty($class)) {
-                $this->ms3->loadCustomClasses('payment');
-                if (class_exists($class)) {
-                    /** @var Payment $controller */
-                    $controller = new $class($msOrder);
-                    if (method_exists($controller, 'getPaymentLink')) {
-                        $link = $controller->getPaymentLink($msOrder);
-                        $pls['payment_link'] = $link;
-                    }
-                }
-            }
+        $msPayment = $msOrder->getOne('Payment');
+        if ($msPayment) {
+            //TODO реализовать загрузку классов
+            //$pls['payment_link'] = $this->getPaymentLink($msPayment, $msOrder);
         }
 
-        if ($status->get('email_manager')) {
-            $subject = $this->ms3->pdoFetch->getChunk('@INLINE ' . $status->get('subject_manager'), $pls);
-            $tpl = '';
-            if ($chunk = $this->modx->getObject(modChunk::class, ['id' => $status->get('body_manager')])) {
-                $tpl = $chunk->get('name');
-            }
-            $body = $this->modx->runSnippet('msGetOrder', array_merge($pls, ['tpl' => $tpl]));
-            $emails = array_map(
-                'trim',
-                explode(
-                    ',',
-                    $this->modx->getOption('ms3_email_manager', null, $this->modx->getOption('emailsender'))
-                )
+        return $pls;
+    }
+
+    protected function getLang($msOrder)
+    {
+        $lang = $this->modx->getOption('cultureKey', null, 'en', true);
+        $tmp = $this->modx->getObject(
+            modUserSetting::class,
+            ['key' => 'cultureKey', 'user' => $msOrder->get('user_id')]
+        );
+        if ($tmp) {
+            $lang = $tmp->get('value');
+        } else {
+            $tmp = $this->modx->getObject(
+                modContextSetting::class,
+                ['key' => 'cultureKey', 'context_key' => $msOrder->get('context')]
             );
-            if (!empty($subject)) {
-                foreach ($emails as $email) {
-                    if (preg_match('#.*?@.*#', $email)) {
-                        $this->ms3->utils->sendEmail($email, $subject, $body);
-                    }
+            if ($tmp) {
+                $lang = $tmp->get('value');
+            }
+        }
+        // TODO реализовать запись и проверку языка заказа в самом объекте заказа
+
+        return $lang;
+    }
+
+    protected function getPaymentLink($msPayment, $msOrder)
+    {
+        $class = $msPayment->get('class');
+        if (!empty($class)) {
+            $this->ms3->loadCustomClasses('payment');
+            if (class_exists($class)) {
+                /** @var Payment $controller */
+                $controller = new $class($msOrder);
+                if (method_exists($controller, 'getPaymentLink')) {
+                    return $controller->getPaymentLink($msOrder);
                 }
             }
         }
 
-        if ($status->get('email_user')) {
-            if ($profile = $this->modx->getObject(modUserProfile::class, ['internalKey' => $pls['user_id']])) {
-                $subject = $this->ms3->pdoFetch->getChunk('@INLINE ' . $status->get('subject_user'), $pls);
-                $tpl = '';
-                if ($chunk = $this->modx->getObject(modChunk::class, ['id' => $status->get('body_user')])) {
-                    $tpl = $chunk->get('name');
-                }
-                $body = $this->modx->runSnippet('msGetOrder', array_merge($pls, ['tpl' => $tpl]));
-                $email = $profile->get('email');
-                if (!empty($subject) && preg_match('#.*?@.*#', $email)) {
-                    $this->ms3->utils->sendEmail($email, $subject, $body);
-                }
+        return '';
+    }
+
+    protected function setSchedulerTask()
+    {
+        /** @var \Scheduler $scheduler */
+        $path = $this->modx->getOption(
+            'scheduler.core_path',
+            null,
+            $this->modx->getOption('core_path') . 'components/scheduler/'
+        );
+        $scheduler = $this->modx->getService('scheduler', 'Scheduler', $path . 'model/scheduler/');
+        if ($scheduler) {
+            $this->schedulerTask = $scheduler->getTask('MiniShop3', 'ms3_send_email');
+            if (!$this->schedulerTask) {
+                $this->schedulerTask = $this->createEmailTask();
             }
+        } else {
+            $this->useScheduler = false;
+            $this->modx->log(1, 'not found Scheduler extra');
         }
+    }
+
+    /**
+     * Creating Scheduler's task for sending email
+     * @return false|object|null
+     */
+    protected function createEmailTask()
+    {
+        $task = $this->modx->newObject(\sFileTask::class);
+        $task->fromArray([
+            'class_key' => 'sFileTask',
+            'content' => '/tasks/sendEmail.php',
+            'namespace' => 'MiniShop3',
+            'reference' => 'ms3_send_email',
+            'description' => 'MiniShop3 Email'
+        ]);
+        if (!$task->save()) {
+            return false;
+        }
+        return $task;
     }
 }

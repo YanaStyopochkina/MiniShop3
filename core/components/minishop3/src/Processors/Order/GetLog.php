@@ -72,12 +72,6 @@ class GetLog extends GetListProcessor
      */
     public function prepareQueryBeforeCount(xPDOQuery $c)
     {
-        $type = $this->getProperty('type');
-        if (!empty($type)) {
-            $c->where([
-                'action' => $type
-            ]);
-        }
         $order_id = $this->getProperty('order_id');
         if (!empty($order_id)) {
             $c->where([
@@ -89,12 +83,6 @@ class GetLog extends GetListProcessor
         $c->leftJoin(modUserProfile::class, 'modUserProfile', '`msOrderLog`.`user_id` = `modUserProfile`.`internalKey`');
         $exclude = [];
         $add_select = ' , `modUser`.`username`, `modUserProfile`.`fullname`';
-        if ($type == 'status') {
-            $c->leftJoin(msOrderStatus::class, 'msOrderStatus', '`msOrderLog`.`entry` = `msOrderStatus`.`id`');
-            $exclude[] = 'entry';
-            $add_select .= ', `msOrderStatus`.`name` as `entry`, `msOrderStatus`.`color`';
-        }
-
         $select = $this->modx->getSelectColumns(msOrderLog::class, 'msOrderLog', '', $exclude, true);
         $select .= $add_select;
 
@@ -128,6 +116,16 @@ class GetLog extends GetListProcessor
      */
     public function prepareArray(array $data)
     {
+        $this->modx->log(1, print_r($data, 1));
+        if ($data['action'] === 'status') {
+            $q = $this->modx->newQuery(msOrderStatus::class);
+            $q->where(['id' => $data['entry']]);
+            $q->select('name as entry, color');
+            $q->prepare();
+            $q->stmt->execute();
+            $status = $q->stmt->fetch(\PDO::FETCH_ASSOC);
+            $data = array_merge($data, $status);
+        }
         if (!empty($data['color'])) {
             $data['entry'] = '<span>' . $data['entry'] . '</span>';
         }

@@ -5,6 +5,7 @@ namespace MiniShop3\Controllers\Storage\DB;
 use MiniShop3\Model\msCustomerAddress;
 use MiniShop3\Model\msDelivery;
 use MiniShop3\Model\msOrder;
+use MiniShop3\Model\msOrderAddress;
 use MiniShop3\Model\msPayment;
 use Rakit\Validation\Validator;
 use MiniShop3\Controllers\Order\OrderStatus;
@@ -48,7 +49,8 @@ class DBOrder extends DBStorage
         if (empty($this->token)) {
             return $this->error('ms3_err_token');
         }
-        $this->initDraft();
+
+        $this->draft = $this->getDraft($this->token);
 
         //TODO Добавить событие?
 //        $response = $this->invokeEvent('msOnBeforeGetOrder', [
@@ -306,6 +308,7 @@ class DBOrder extends DBStorage
     public function add(string $key, mixed $value = null): array
     {
         if (empty($this->order)) {
+            $this->initDraft();
             $response = $this->get();
             if ($response['success']) {
                 $this->order = $response['data']['order'];
@@ -352,6 +355,7 @@ class DBOrder extends DBStorage
     public function validate(string $key, mixed $value): mixed
     {
         if (empty($this->order)) {
+            $this->initDraft();
             $response = $this->get();
             if ($response['success']) {
                 $this->order = $response['data']['order'];
@@ -435,6 +439,7 @@ class DBOrder extends DBStorage
     public function remove($key): bool
     {
         if (empty($this->order)) {
+            $this->initDraft();
             $response = $this->get();
             if ($response['success']) {
                 $this->order = $response['data']['order'];
@@ -467,6 +472,7 @@ class DBOrder extends DBStorage
     public function set(array $order): array
     {
         if (empty($this->order)) {
+            $this->initDraft();
             $response = $this->get();
             if ($response['success']) {
                 $this->order = $response['data']['order'];
@@ -545,6 +551,11 @@ class DBOrder extends DBStorage
         if (empty($this->order['address_phone']) && !empty($this->draft->Customer->get('phone'))) {
             $this->add('phone', $this->draft->Customer->get('phone'));
         }
+        // reload order after additional data
+        $response = $this->get();
+        if ($response['success']) {
+            $this->order = $response['data']['order'];
+        }
 
 
         $response = $this->getDeliveryRequiresFields();
@@ -562,8 +573,6 @@ class DBOrder extends DBStorage
             return $this->error('ms3_order_err_requires', $errors);
         }
 
-
-        //TODO проверить, регистрируем ли пользователя?
         $registerUser = $this->modx->getOption('ms3_order_register_user_on_submit', null, false);
         $user_id = 0;
         if ($registerUser) {
@@ -856,13 +865,22 @@ class DBOrder extends DBStorage
         return $this->success('', ['requires' => $requires]);
     }
 
-    protected function getOrder()
+    protected function getOrder(): array
     {
-        $Address = $this->draft->getOne('Address');
-        $output = $this->draft->toArray();
-        if (!empty($Address)) {
+        if (empty($this->draft)) {
+            $output = $this->modx->getFields(msOrder::class);
+            $address = $this->modx->getFields(msOrderAddress::class);
             $addressFields = [];
-            foreach ($Address->toArray() as $key => $value) {
+            foreach ($address as $key => $value) {
+                $addressFields['address_' . $key] = $value;
+            }
+            return array_merge($output, $addressFields);
+        }
+        $address = $this->draft->getOne('Address');
+        $output = $this->draft->toArray();
+        if (!empty($address)) {
+            $addressFields = [];
+            foreach ($address->toArray() as $key => $value) {
                 $addressFields['address_' . $key] = $value;
             }
             $output = array_merge($output, $addressFields);

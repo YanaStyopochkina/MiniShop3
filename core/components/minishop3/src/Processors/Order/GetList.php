@@ -47,8 +47,9 @@ class GetList extends GetListProcessor
         $c = $this->prepareQueryAfterCount($c);
 
         $c->prepare();
+        $this->modx->log(1, $c->toSQL());
         return [
-            'results' => ( $c->stmt->execute()) ? $c->stmt->fetchAll(\PDO::FETCH_ASSOC) : [],
+            'results' => ($c->stmt->execute()) ? $c->stmt->fetchAll(\PDO::FETCH_ASSOC) : [],
             'total' => (int)$this->getProperty('total'),
         ];
     }
@@ -62,11 +63,11 @@ class GetList extends GetListProcessor
     {
 //        $c->leftJoin(modUser::class, 'User');
 //        $c->leftJoin(modUserProfile::class, 'UserProfile');
-//        $c->leftJoin(msCustomer::class, 'Customer');
+//        $c->leftJoin(msCustomer::class, 'Customer', '`Customer`.id = msOrder.customer_id');
         $c->leftJoin(msOrderStatus::class, 'Status');
         $c->leftJoin(msDelivery::class, 'Delivery');
         $c->leftJoin(msPayment::class, 'Payment');
-        $c->leftJoin(msOrderAddress::class, 'Address', 'Address.order_id = msOrder.id');
+        $c->leftJoin(msOrderAddress::class, 'Address', '`Address`.order_id = msOrder.id');
 
         $item = $this->modx->getObject(modSystemSetting::class, [
             'key' => 'ms3_order_show_drafts'
@@ -132,8 +133,7 @@ class GetList extends GetListProcessor
             $this->modx->getSelectColumns(msOrder::class, 'msOrder', '', $exclude, true) . ',
             `msOrder`.status_id, `msOrder`.delivery_id, `msOrder`.payment_id,
             `Address`.first_name, `Address`.last_name, `Address`.phone, `Address`.email,
-            `Status`.name as `status_name`, `Status`.color, `Delivery`.name as `delivery_name`, `Payment`.name as `payment_name`'
-        );
+            `Status`.name as `status_name`, `Status`.color, `Delivery`.name as `delivery_name`, `Payment`.name as `payment_name`');
         $c->groupby('msOrder.id');
 
         return $c;
@@ -211,13 +211,21 @@ class GetList extends GetListProcessor
     public function prepareArray(array $data)
     {
         $ms3 = $this->modx->services->get('ms3');
-//        if (empty($data['customer'])) {
-//            $data['customer'] = $data['customer_username'];
-//        }
+        $registerUser = $this->modx->getOption('ms3_order_register_user_on_submit', null, false);
+        $data['register_user'] = $registerUser;
+
         $data['customer'] = implode(' ', [
             $data['first_name'],
             $data['last_name'],
         ]);
+
+        if ($registerUser && !empty($data['user_id'])) {
+            $data['customer'] = "<a href=\"?a=security/user/update&id={$data['user_id']}\" class=\"ms-link\" target=\"_blank\">{$data['customer']}</a>";
+        }
+        if (!$registerUser && !empty($data['customer_id'])) {
+            $data['customer'] = "<a href=\"?a=mgr/customers&namespace=minishop3&customer={$data['customer_id']}\" class=\"ms-link\" target=\"_blank\">{$data['customer']}</a>";
+        }
+
         if (isset($data['cost'])) {
             $data['cost'] = $ms3->format->price($data['cost']);
         }

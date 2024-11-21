@@ -47,7 +47,6 @@ class GetList extends GetListProcessor
         $c = $this->prepareQueryAfterCount($c);
 
         $c->prepare();
-        $this->modx->log(1, $c->toSQL());
         return [
             'results' => ($c->stmt->execute()) ? $c->stmt->fetchAll(\PDO::FETCH_ASSOC) : [],
             'total' => (int)$this->getProperty('total'),
@@ -61,9 +60,6 @@ class GetList extends GetListProcessor
      */
     public function prepareQueryBeforeCount(xPDOQuery $c)
     {
-//        $c->leftJoin(modUser::class, 'User');
-//        $c->leftJoin(modUserProfile::class, 'UserProfile');
-//        $c->leftJoin(msCustomer::class, 'Customer', '`Customer`.id = msOrder.customer_id');
         $c->leftJoin(msOrderStatus::class, 'Status');
         $c->leftJoin(msDelivery::class, 'Delivery');
         $c->leftJoin(msPayment::class, 'Payment');

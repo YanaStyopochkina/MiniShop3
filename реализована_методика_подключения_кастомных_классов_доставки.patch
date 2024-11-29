@@ -1,0 +1,76 @@
+Subject: [PATCH] реализована методика подключения кастомных классов доставки
+---
+Index: core/components/minishop3/src/Controllers/Storage/DB/DBOrder.php
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/core/components/minishop3/src/Controllers/Storage/DB/DBOrder.php b/core/components/minishop3/src/Controllers/Storage/DB/DBOrder.php
+--- a/core/components/minishop3/src/Controllers/Storage/DB/DBOrder.php	(revision 5d494817c4549528b17b2ede64ab6e51dc31373e)
++++ b/core/components/minishop3/src/Controllers/Storage/DB/DBOrder.php	(revision be3507abf5420f73322452445a0746510653c934)
+@@ -175,7 +175,6 @@
+         if ($cartCostResponse['success']) {
+             $cartCost = $cartCostResponse['data']['cost'];
+         }
+-        //TODO пересмотреть модель доставки и ее методы
+         $costWithDelivery = $msDelivery->getCost($this->ms3->order, $cartCost);
+         $deliveryCost = $costWithDelivery - $cartCost;
+ 
+Index: core/components/minishop3/src/Model/msDelivery.php
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/core/components/minishop3/src/Model/msDelivery.php b/core/components/minishop3/src/Model/msDelivery.php
+--- a/core/components/minishop3/src/Model/msDelivery.php	(revision 5d494817c4549528b17b2ede64ab6e51dc31373e)
++++ b/core/components/minishop3/src/Model/msDelivery.php	(revision be3507abf5420f73322452445a0746510653c934)
+@@ -65,20 +65,13 @@
+         }
+ 
+         if ($class !== $this->defaultControllerClass) {
+-            // TODO: ждём новой реализации
+-            //$this->ms3->loadCustomClasses('delivery');
+-        }
+-        if (!class_exists($class)) {
+-            $this->xpdo->log(modX::LOG_LEVEL_ERROR, 'Delivery controller class "' . $class . '" not found.');
+-            $class = $this->defaultControllerClass;
+-        }
+-        $this->controller = new $class($this->ms3, []);
+-        if (!($this->controller instanceof DeliveryInterface)) {
+-            $this->xpdo->log(modX::LOG_LEVEL_ERROR, 'Could not initialize delivery controller class: "' . $class . '"');
++            $this->controller = new $class($this->ms3);
++            if (!$this->controller instanceof DeliveryInterface) {
++                $this->xpdo->log(modX::LOG_LEVEL_ERROR, 'Could not initialize delivery controller class: "' . $class . '"');
+ 
+-            return false;
++                return false;
++            }
+         }
+-
+         return true;
+     }
+ 
+Index: core/components/minishop3/src/Processors/Settings/GetClass.php
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/core/components/minishop3/src/Processors/Settings/GetClass.php b/core/components/minishop3/src/Processors/Settings/GetClass.php
+--- a/core/components/minishop3/src/Processors/Settings/GetClass.php	(revision 5d494817c4549528b17b2ede64ab6e51dc31373e)
++++ b/core/components/minishop3/src/Processors/Settings/GetClass.php	(revision be3507abf5420f73322452445a0746510653c934)
+@@ -13,13 +13,13 @@
+     public function process()
+     {
+         $type = $this->getProperty('type');
+-        
++
+         /** @var MiniShop3 $ms3 */
+         $ms3 = $this->modx->services->get('ms3');
+         $registeredServices = $ms3->services->get($type);
+ 
+         $result = [];
+-        foreach($registeredServices as $class) {
++        foreach ($registeredServices as $class) {
+             $result[] = [
+                 'name' => $class,
+                 'class' => $class

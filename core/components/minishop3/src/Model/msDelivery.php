@@ -64,14 +64,13 @@ class msDelivery extends xPDOSimpleObject
             $class = $this->defaultControllerClass;
         }
 
-        if ($class !== $this->defaultControllerClass) {
-            $this->controller = new $class($this->ms3);
-            if (!$this->controller instanceof DeliveryInterface) {
-                $this->xpdo->log(modX::LOG_LEVEL_ERROR, 'Could not initialize delivery controller class: "' . $class . '"');
+        $this->controller = new $class($this->ms3, []);
+        if (!$this->controller instanceof DeliveryInterface) {
+            $this->xpdo->log(modX::LOG_LEVEL_ERROR, 'Could not initialize delivery controller class: "' . $class . '"');
 
-                return false;
-            }
+            return false;
         }
+
         return true;
     }
 

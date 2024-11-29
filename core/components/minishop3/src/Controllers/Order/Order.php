@@ -192,7 +192,7 @@ class Order implements OrderInterface
             return $response['message'];
         }
 
-        if (!empty($response['data']['user']) && $response['data']['user'] instanceof modUser::class) {
+        if (!empty($response['data']['user']) && $response['data']['user'] instanceof modUser) {
             $modUser = $response['data']['user'];
         }
 

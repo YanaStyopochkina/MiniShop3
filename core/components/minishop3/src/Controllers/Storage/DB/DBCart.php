@@ -632,7 +632,7 @@ class DBCart extends DBStorage
 
     /**
      * @param msOrder $draft
-     * @return []
+     * @return array
      */
     public function loadCart($draft)
     {

@@ -18,9 +18,8 @@
                    </button>
                </h2>
                <div id="headerMiniCart" class="accordion-collapse collapse" data-bs-parent="#headerAccordion">
-                   {*todo заменить @FILE на чанк tpl.msMiniCart*}
                    {'!msCart'|snippet:[
-                       'tpl' => '@FILE chunks/ms3_minicart.tpl',
+                       'tpl' => 'tpl.msMiniCart',
                        'selector' => '#headerMiniCart'
                    ]}
                </div>
